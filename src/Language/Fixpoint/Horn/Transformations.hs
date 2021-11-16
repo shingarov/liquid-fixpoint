@@ -32,7 +32,7 @@ import           Language.Fixpoint.Types.Visitor as V
 import           System.Console.CmdArgs.Verbosity
 import           Data.Bifunctor (second)
 import System.IO (hFlush, stdout)
--- import qualified Debug.Trace as DBG
+import qualified Debug.Trace as DBG
 
 -- $setup
 -- >>> :l src/Language/Fixpoint/Horn/Transformations.hs src/Language/Fixpoint/Horn/Parse.hs
@@ -44,8 +44,8 @@ import System.IO (hFlush, stdout)
 -- Debugging
 ---------------
 trace :: String -> a -> a
--- trace _msg v = DBG.trace _msg v
-trace _msg v = v
+trace _msg v = DBG.trace _msg v
+-- trace _msg v = v
 
 printPiSols :: (F.PPrint a1, F.PPrint a2, F.PPrint a3) =>
                M.HashMap a1 ((a4, a2), a3) -> IO ()
@@ -68,7 +68,7 @@ printPiSols piSols =
 -- can depend on other ks, pis cannot directly depend on other pis
 -- - predicate for exists binder is `true`. (TODO: is this pre stale?)
 
-solveEbs :: (F.PPrint a) => F.Config -> Query a -> IO (Query a)
+solveEbs :: (F.PPrint a, F.Fixpoint a) => F.Config -> Query a -> IO (Query a)
 ------------------------------------------------------------------------------
 solveEbs cfg query@(Query qs vs c cons dist eqns mats dds) = do
   -- clean up
@@ -786,26 +786,35 @@ elim1 c k = simplify $ doelim k sol c
 -- >>> sc
 -- (forall ((x ... (and (forall ((y ... (forall ((v ... ((k0 v)))) (forall ((z ...
 
--- scope is lca
 scope :: F.Symbol -> Cstr a -> Cstr a
-scope k cstr = case go cstr of
+scope k cstr =
+  trace ("\nFUUUUCK cstr = " ++ F.showpp cstr ++
+     "\nk = " ++ show k ++
+     "\nscope = " ++ F.showpp (scopeZZZ k cstr)
+     ) (scopeZZZ k cstr)
+
+
+
+-- scope is lca
+scopeZZZ :: F.Symbol -> Cstr a -> Cstr a
+scopeZZZ k cstr = case go cstr of
                  Right c -> c
                  Left l -> Head (Reft F.PTrue) l
   where
     go c@(Head (Var k' _) _)
-      | k' == k = Right c
-    go (Head _ l) = Left l
+      | k' == k = (trace ("\ngo -> Head Var, c = " ++ F.showpp c) (Right c))
+    go (Head _ l) = (trace "\ngo -> Head _"   (Left l))
     go c@(All (Bind _ _ p) c') =
-      if k `S.member` (pKVars p) then Right c else go c'
+      (trace ("\ngo -> All Bind, member = " ++ show (k `S.member` (pKVars p)) ++ ", c' = " ++ F.showpp c')  (if k `S.member` (pKVars p) then Right c else go c') )
     go Any{} = error "any should not appear after poke"
 
     -- if kvar doesn't appear, then just return the left
     -- if kvar appears in one child, that is the lca
     -- but if kvar appear in multiple chlidren, this is the lca
     go c@(CAnd cs) = case rights (go <$> cs) of
-                       [] -> Left $ cLabel c
-                       [c] -> Right c
-                       _ -> Right c
+                       [] ->  (trace "\ngo -> CAnd [] "  (Left $ cLabel c) )
+                       [c] -> (trace "\ngo -> CAnd [c]"  (Right c) )
+                       _ ->   (trace "\ngo -> CAnd _  "  (Right c) )
 
 
 -- | A solution is a Hyp of binders (including one anonymous binder
@@ -830,13 +839,17 @@ scope k cstr = case go cstr of
 --     a collection of cubes that we'll want to disjunct
 
 sol1 :: F.Symbol -> Cstr a -> [([Bind], [F.Expr])]
-sol1 k (CAnd cs) = sol1 k =<< cs
-sol1 k (All b c) = (\(bs, eqs) -> (b:bs, eqs)) <$> sol1 k c
-sol1 k (Head (Var k' ys) _) | k == k'
+sol1' :: F.Symbol -> Cstr a -> [([Bind], [F.Expr])]
+
+sol1 sss ccc = trace ("\n```````````sol1: k = " ++ show sss ++ "\ncstr = " ++ F.showpp ccc ++ "\nsol1---> " ++ show (sol1' sss ccc))   (sol1' sss ccc)
+
+sol1' k (CAnd cs) = sol1 k =<< cs
+sol1' k (All b c) = (\(bs, eqs) -> (b:bs, eqs)) <$> sol1 k c
+sol1' k (Head (Var k' ys) _) | k == k'
   = [([], zipWith (F.PAtom F.Eq) (F.EVar <$> xs) (F.EVar <$> ys))]
-  where xs = zipWith const (kargs k) ys
-sol1 _ (Head _ _) = []
-sol1 _ (Any _ _) =  error "ebinds don't work with old elim"
+  where xs = trace ("\nZZZZZZZZZZZZ: " ++ show (zipWith const (kargs k) ys) ) (zipWith const (kargs k) ys)
+sol1' _ (Head _ _) = []
+sol1' _ (Any _ _) =  error "ebinds don't work with old elim"
 
 kargs :: F.Symbol -> [F.Symbol]
 kargs k = fromString . (("κarg$" ++ F.symbolString k ++ "#") ++) . show <$> [1..]
@@ -847,29 +860,42 @@ kargs k = fromString . (("κarg$" ++ F.symbolString k ++ "#") ++) . show <$> [1.
 -- (forall ((v bool) (v)) (forall ((z int) (donkey)) ((z == x))))
 
 doelim :: F.Symbol -> [([Bind], [F.Expr])] -> Cstr a -> Cstr a
+
+
 doelim k bss (CAnd cs)
-  = CAnd $ doelim k bss <$> cs
-doelim k bss (All (Bind x t p) c) =
+  = trace ("\n\n~~~ doelim CAnd\ncs = " ++ F.showpp cs)     (CAnd $ doelim k bss <$> cs)
+
+doelim k bss (All (Bind x t p) c) = trace ("\n\n~~~ doelim All Bind:\nx = " ++ show x ++ 
+               "\nt = " ++ show t ++ 
+               "\np = " ++ show p ++
+               "\nbss = " ++ show bss ++
+               "\nc = " ++ F.showpp c) (
   case findKVarInGuard k p of
     Right _ -> All (Bind x t p) (doelim k bss c)
-    Left (kvars, preds) -> demorgan x t kvars preds (doelim k bss c) bss
+    Left (kvars, preds) -> demorgan x t kvars preds (doelim k bss c) bss )
   where
     demorgan :: F.Symbol -> F.Sort -> [(F.Symbol, [F.Symbol])] -> [Pred] -> Cstr a -> [([Bind], [F.Expr])] -> Cstr a
-    demorgan x t kvars preds c bss = mkAnd $ cubeSol <$> bss
-      where su = F.Su $ M.fromList $ concat $ map (\(k, xs) -> zip (kargs k) (F.EVar <$> xs)) kvars
+    demorgan x t kvars preds c bss = 
+      trace ("\ndeMorgan:\nkvars = " ++ show kvars ++ "\ndeMorgan result-> " ++ show theResult) theResult
+      where
+            theResult = mkAnd $ cubeSol <$> bss
+            su = F.Su $ M.fromList $ concat $ map ( \(k, xs) -> (oneSuka k xs)    ) kvars
             mkAnd [c] = c
             mkAnd cs = CAnd cs
             cubeSol ((b:bs), eqs) = All b $ cubeSol (bs, eqs)
-            cubeSol ([], eqs) = All (Bind x t (PAnd $ (Reft <$> F.subst su eqs) ++ (F.subst su <$> preds))) c
+            cubeSol ([], eqs) =  trace ("\nsubst su eqs-> " ++ show (F.subst su eqs) ++ "\nReft--> " ++ show (Reft <$> F.subst su eqs))       (All (Bind x t (PAnd $ (Reft <$> F.subst su eqs) ++ (F.subst su <$> preds))) c)
+            oneSuka k xs = trace ("\noneSuka: k=" ++ show k ++ " xs=" ++ show xs ++ " --> " ++ show (zip (kargs k) (F.EVar <$> xs)) )  (zip (kargs k) (F.EVar <$> xs))
+
 doelim k _ (Head (Var k' _) a)
   | k == k'
-  = Head (Reft F.PTrue) a
-doelim _ _ (Head p a) = Head p a
+  = trace ("\n\n~~~ doelim Head Var k'==k\nk = " ++ show k ++ "\nreturning " ++ show (Head (Reft F.PTrue) a) )    (Head (Reft F.PTrue) a)
+
+doelim _ _ (Head p a) = trace ("\n\n~~~ doelim Head\nreturning " ++ show (Head p a))    (Head p a)
 
 doelim k bss (Any (Bind x t p) c) =
   case findKVarInGuard k p of
-    Right _ -> Any (Bind x t p) (doelim k bss c)
-    Left (_, rights) -> Any (Bind x t (PAnd rights)) (doelim k bss c) -- TODO: for now we set the kvar to true. not sure if this is correct
+    Right _ -> trace "~~~ doelim Right\n" ( Any (Bind x t p) (doelim k bss c) )
+    Left (_, rights) -> trace "~~~ doelim Left\n" (   Any (Bind x t (PAnd rights)) (doelim k bss c)  )
 
 -- If k is in the guard then returns a Left list of that k and the remaining preds in the guard
 -- If k is not in the guard returns a Right of the pred
@@ -920,7 +946,7 @@ isNNF (CAnd cs) = all isNNF cs
 isNNF (All _ c) = isNNF c
 isNNF Any{} = False
 
-calculateCuts :: F.Config -> Query a -> Cstr a -> S.Set F.Symbol
+calculateCuts :: (F.Fixpoint a) => F.Config -> Query a -> Cstr a -> S.Set F.Symbol
 calculateCuts cfg (Query qs vs _ cons dist eqns mats dds) nnf = convert $ FG.depCuts deps
   where
     (_, deps) = elimVars cfg (hornFInfo cfg $ Query qs vs nnf cons dist eqns mats dds)

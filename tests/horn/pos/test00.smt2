@@ -1,5 +1,6 @@
 // TODO move to actual SMTLIB format 
 (fixpoint "--eliminate=horn")
+(fixpoint "--save")
 
 (qualif  Foo ((v Int) (x Int)) (v = x))
 (qualif  Bar ((v Int) (x Int)) (v > x))

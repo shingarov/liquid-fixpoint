@@ -18,8 +18,9 @@ import qualified Language.Fixpoint.Misc         as Misc
 import qualified Language.Fixpoint.Types        as F
 import qualified Language.Fixpoint.Types.Config as F
 import qualified Language.Fixpoint.Horn.Types   as H
+import Debug.Trace
 
-hornFInfo :: F.Config -> H.Query a -> F.FInfo a
+hornFInfo :: (F.Fixpoint a) => F.Config -> H.Query a -> F.FInfo a
 hornFInfo cfg q = mempty
   { F.cm        = cs
   , F.bs        = be2
@@ -45,7 +46,7 @@ axEnv cfg q cs = mempty
   } 
 
 ----------------------------------------------------------------------------------
-hornSubCs :: F.BindEnv -> KVEnv a -> H.Cstr a
+hornSubCs :: (F.Fixpoint a) => F.BindEnv -> KVEnv a -> H.Cstr a
           -> (F.BindEnv, [F.BindId], M.HashMap F.SubcId (F.SubC a))
 ----------------------------------------------------------------------------------
 hornSubCs be kve c = (be', ebs, M.fromList (F.addIds cs))
@@ -56,15 +57,30 @@ hornSubCs be kve c = (be', ebs, M.fromList (F.addIds cs))
 -- | @goS@ recursively traverses the NNF constraint to build up a list
 --   of the vanilla @SubC@ constraints.
 
-goS :: KVEnv a -> F.IBindEnv -> F.SortedReft -> F.BindEnv -> H.Cstr a
+goS :: (F.Fixpoint a) => KVEnv a -> F.IBindEnv -> F.SortedReft -> F.BindEnv -> H.Cstr a
     -> (F.BindEnv, [F.BindId], [F.SubC a])
 
-goS kve env lhs be c = (be', mEbs, subcs)
+goS kve env lhs be c = trace
+     ("\n<<<<<<<<<<<<<<<<<<<<<<<<< goS" ++
+      "\nIN:" ++
+      "\nkve = " ++ show kve ++
+      "\nenv: " ++ show env ++
+      "\nlhs: " ++ show lhs ++
+      "\nbe: " ++ show be ++ 
+      "\nc: " ++ show c ++
+
+      "\nOUT:" ++
+      "\nbe': " ++ show be' ++
+      "\nmEbs: " ++ show mEbs ++
+      "\nsubcs: " ++ show subcs ++
+      "\n>>>>>>>>>>>>>>>>>>>>>>>>END OF goS"
+  )
+     ( (be', mEbs, subcs) )
   where
     (be', ecs) = goS' kve env lhs be c
     (mEbs, subcs) = partitionEithers ecs
 
-goS' :: KVEnv a -> F.IBindEnv -> F.SortedReft -> F.BindEnv -> H.Cstr a
+goS' :: (F.Fixpoint a) => KVEnv a -> F.IBindEnv -> F.SortedReft -> F.BindEnv -> H.Cstr a
     -> (F.BindEnv, [Either F.BindId (F.SubC a)])
 goS' kve env lhs be (H.Head p l) = (be, [Right subc])
   where
@@ -89,8 +105,12 @@ goS' kve env _   be (H.Any b c)  = (be'', Left bId : subcs)
     bSR                         = bindSortedReft kve b
     env'                        = F.insertsIBindEnv [bId] env
 
-bindSortedReft :: KVEnv a -> H.Bind -> F.SortedReft
-bindSortedReft kve (H.Bind x t p) = F.RR t (F.Reft (x, predExpr kve p))
+bindSortedReft :: (F.Fixpoint a) => KVEnv a -> H.Bind -> F.SortedReft
+bindSortedReft kve (H.Bind x t p) = trace ("\nbindSortedReft" ++
+      "\nkve = " ++ show kve ++ 
+      "\nx = " ++ show x ++ 
+      "\nt = " ++ show t ++
+      "\np = " ++ show p) (F.RR t (F.Reft (x, predExpr kve p)))
 
 updSortedReft :: KVEnv a -> F.SortedReft -> H.Pred -> F.SortedReft
 updSortedReft kve (F.RR s (F.Reft (v, _))) p = F.RR s (F.Reft (v, predExpr kve p))
@@ -144,10 +164,13 @@ data KVInfo a = KVInfo
   , kvParams :: ![F.Symbol]
   , kvWfC    :: !(F.WfC a)
   }
-  deriving (Generic, Functor)
+  deriving (Generic, Functor, Show)
 
-kvEnvWfCs :: KVEnv a -> M.HashMap F.KVar (F.WfC a)
-kvEnvWfCs kve = M.fromList [ (F.KV k, kvWfC info) | (k, info) <- M.toList kve ]
+kvEnvWfCs :: (F.Fixpoint a) => KVEnv a -> M.HashMap F.KVar (F.WfC a)
+kvEnvWfCs kve = trace ("\n/////////   kvEnvWfCs:\nkve = " ++ (show kve) ++ "\nresult--> " ++ show (kvEnvWfCsZZZ kve))   (kvEnvWfCsZZZ kve)
+
+kvEnvWfCsZZZ :: KVEnv a -> M.HashMap F.KVar (F.WfC a)
+kvEnvWfCsZZZ kve = M.fromList [ (F.KV k, kvWfC info) | (k, info) <- M.toList kve ]
 
 hvarArg :: H.Var a -> Int -> F.Symbol
 hvarArg k i = F.intSymbol (F.suffixSymbol hvarPrefix (H.hvName k)) i

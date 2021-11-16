@@ -54,6 +54,7 @@ import           Control.Monad.State.Strict
 import qualified Data.HashMap.Strict as M
 import           Data.Maybe (catMaybes)
 import           Control.Exception.Base (bracket)
+import Debug.Trace
 
 --------------------------------------------------------------------------------
 -- | Solver Monadic API --------------------------------------------------------
@@ -138,7 +139,7 @@ sendConcreteBindingsToSMT known act = do
   be <- getBinds
   let concretePreds =
         [ (i, F.subst1 p (v, F.EVar s))
-        | (i, s, F.RR _ (F.Reft (v, p))) <- F.bindEnvToList be
+        | (i, s, F.RR _ (F.Reft (v, p))) <- (trace ("sendConcrete:\n" ++ show be) F.bindEnvToList be)
         , F.isConc p
         , not (isShortExpr p)
         , not (F.memberIBindEnv i known)

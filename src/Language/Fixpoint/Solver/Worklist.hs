@@ -33,6 +33,7 @@ import qualified Data.HashMap.Strict       as M
 import qualified Data.Set                  as S
 import qualified Data.List                 as L
 import           Text.PrettyPrint.HughesPJ (text)
+import Debug.Trace
 
 -- | Worklist ------------------------------------------------------------------
 
@@ -146,8 +147,10 @@ rank w i = rScc $ lookupCMap (wRankm w) i
 
 ---------------------------------------------------------------------------
 push :: F.SimpC a -> Worklist a -> Worklist a
+push' :: F.SimpC a -> Worklist a -> Worklist a
 ---------------------------------------------------------------------------
-push c w = w { wCs   = sAdds (wCs w) wis'
+push c w = trace "```````` push!\n" (push' c w)
+push' c w = w { wCs   = sAdds (wCs w) wis'
              , wTime = 1 + t
              , wPend = addPends wp is'
              }

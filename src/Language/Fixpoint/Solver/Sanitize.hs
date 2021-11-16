@@ -33,6 +33,7 @@ import qualified Data.Text                                         as T
 import           Data.Maybe          (isNothing, mapMaybe, fromMaybe)
 import           Control.Monad       ((>=>))
 import           Text.PrettyPrint.HughesPJ
+import Debug.Trace
 
 type SanitizeM a = Either E.Error a
 
@@ -230,7 +231,7 @@ kvarDefUses si = (Misc.group ins, Misc.group outs)
 -- | `dropDeadSubsts` removes dead `K[x := e]` where `x` NOT in the domain of K.
 --------------------------------------------------------------------------------
 dropDeadSubsts :: F.SInfo a -> F.SInfo a
-dropDeadSubsts si = mapKVarSubsts (F.filterSubst . f) si
+dropDeadSubsts si = trace ("\n______^^^^^^^ kvDom: " ++ show kvsM) (mapKVarSubsts (F.filterSubst . f) si)
   where
     kvsM          = M.mapWithKey (\k _ -> kvDom k) (F.ws si)
     kvDom         = S.fromList . F.kvarDomain si

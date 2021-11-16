@@ -38,10 +38,11 @@ import qualified Language.Fixpoint.Types.Solutions    as Sol
 import           Language.Fixpoint.Types.Constraints  hiding (ws, bs)
 import           Prelude                              hiding (init, lookup)
 import           Language.Fixpoint.Solver.Sanitize
+import           Text.PrettyPrint.HughesPJ          (render)
 
 -- DEBUG
 import Text.Printf (printf)
--- import Debug.Trace (trace)
+import Debug.Trace (trace)
 
 
 --------------------------------------------------------------------------------
@@ -49,10 +50,21 @@ import Text.Printf (printf)
 --------------------------------------------------------------------------------
 init :: (F.Fixpoint a) => Config -> F.SInfo a -> S.HashSet F.KVar -> Sol.Solution
 --------------------------------------------------------------------------------
-init cfg si ks_ = Sol.fromList senv mempty keqs [] mempty ebs xEnv
+init cfg si ks_ = trace ("\n============> init:\nsi = " ++ render (toFixpoint cfg si) ++
+                         "\n============>end of si" ++
+                         "\nks = " ++ show ks ++
+                         "\nkeqs = " ++ show keqs ++
+                         "\nqcs = " ++ show qcs ++
+                         "\nws = " ++ show ws ++
+                         "\ngenv = " ++ show genv ++
+                         "\nsenv = " ++ show senv ++
+                         "\nebs = " ++ show ebs ++
+                         "\nxEnv = " ++ show xEnv ++
+                         "\n============>END.")
+       (Sol.fromList senv mempty keqs [] mempty ebs xEnv)
   where
     keqs       = map (refine si qcs genv) ws `using` parList rdeepseq
-    qcs        = {- trace ("init-qs-size " ++ show (length ws, length qs_, M.keys qcs_)) $ -} qcs_ 
+    qcs        = trace ("\ninit-qs-size " ++ show (length ws, length qs_, M.keys qcs_)) qcs_ 
     qcs_       = mkQCluster qs_
     qs_        = F.quals si
     ws         = [ w | (k, w) <- M.toList (F.ws si), not (isGWfc w), k `S.member` ks ]
@@ -76,7 +88,7 @@ type QCluster = M.HashMap QCSig [Qualifier]
 type QCSig = [F.QualParam]
 
 mkQCluster :: [Qualifier] -> QCluster
-mkQCluster = Misc.groupMap qualSig
+mkQCluster xxx = trace ("\n|||| mkQCluster: qualifiers = " ++ (show xxx)) (Misc.groupMap qualSig xxx)
 
 qualSig :: Qualifier -> QCSig
 qualSig q = [ p { F.qpSym = F.dummyName }  | p <- F.qParams q ] 
@@ -96,11 +108,11 @@ instConstants = F.fromListSEnv . filter notLit . F.toListSEnv . F.gLits
 
 
 refineK :: Bool -> F.SEnv F.Sort -> QCluster -> (F.Symbol, F.Sort, F.KVar) -> (F.KVar, Sol.QBind)
-refineK ho env qs (v, t, k) = F.notracepp _msg (k, eqs')
+refineK ho env qs (v, t, k) = trace _msg (k, eqs')
    where
     eqs                     = instK ho env v t qs
     eqs'                    = Sol.qbFilter (okInst env v t) eqs
-    _msg                    = printf "\n\nrefineK: k = %s, eqs = %s" (F.showpp k) (F.showpp eqs)
+    _msg                    = printf "\n\nrefineK: ho = %s\n env = %s\n qs = %s\n v = %s\n t = %s\n k = %s\n eqs = %s" (show ho) (show env) (show qs) (show v) (show t) (F.showpp k) (F.showpp eqs)
 
 --------------------------------------------------------------------------------
 instK :: Bool
@@ -131,9 +143,9 @@ instKSig ho env v t qsig = do
   ixs       <- matchP senv tyss [(i0, qs0)] (applyQPP su0 <$> qps) 
   -- return     $ F.notracepp msg (reverse ixs)
   ys        <- instSymbol tyss (tail $ reverse ixs) 
-  return (v:ys)
+  return $ trace (msg ++ "\n^^^return: v = " ++ show v ++ "\nys: " ++ show ys)   (v:ys)
   where
-    -- msg        = "instKSig " ++ F.showpp qsig
+    msg        = "\n\n@@@@@@@@@@@@@@@@@@@@@ instKSig " ++ F.showpp qsig
     qp : qps   = qsig
     tyss       = zipWith (\i (t, ys) -> (i, t, ys)) [1..] (instCands ho env)
     senv       = (`F.lookupSEnvWithDistance` env)
@@ -275,12 +287,12 @@ lhsPred
   -> Sol.Solution
   -> F.SimpC a
   -> F.Expr
-lhsPred bindingsInSmt be s c = F.notracepp _msg $ fst $ apply g s bs
+lhsPred bindingsInSmt be s c = trace _msg $ fst $ apply g s bs
   where
     g          = CEnv ci be bs (F.srcSpan c) bindingsInSmt
     bs         = F.senv c
     ci         = sid c
-    _msg       = "LhsPred for id = " ++ show (sid c) ++ " with SOLUTION = " ++ F.showpp s
+    _msg       = "\nLhsPred for id = " ++ show (sid c) ++ " with SOLUTION = " ++ F.showpp s ++ "\n>>> END OF SOLUTION"
 
 data CombinedEnv = CEnv 
   { ceCid  :: !Cid

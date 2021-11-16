@@ -37,6 +37,7 @@ import           Language.Fixpoint.Types
 import           Language.Fixpoint.Types.Visitor (mapKVarSubsts)
 import qualified Data.HashMap.Strict as M
 import           Data.Foldable       (foldl')
+import Debug.Trace
 
 --------------------------------------------------------------------------------
 wfcUniqify    :: SInfo a -> SInfo a
@@ -54,7 +55,10 @@ remakeSubst :: SInfo a -> KVar -> Subst -> Subst
 remakeSubst fi k su = foldl' (updateSubst k) su (kvarDomain fi k)
 
 updateSubst :: KVar -> Subst -> Symbol -> Subst
-updateSubst k (Su su) sym
+updateSubst k s sym = trace ("\n><><>< updateSubst --> " ++ show (updateSubst' k s sym) ++ "\nk=" ++ show k ++ "\ns=" ++ show s ++ "\nsym=" ++ show sym) (updateSubst' k s sym)
+
+updateSubst' :: KVar -> Subst -> Symbol -> Subst
+updateSubst' k (Su su) sym
   = case M.lookup sym su of
       Just z  -> Su $ M.delete sym $ M.insert ksym z          su
       Nothing -> Su $                M.insert ksym (eVar sym) su

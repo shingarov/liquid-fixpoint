@@ -212,7 +212,8 @@ edgeGraph es = KVGraph [(v, v, vs) | (v, vs) <- groupList es ]
 -- need to plumb list of ebinds
 {-# SCC kvEdges #-}
 kvEdges :: (F.TaggedC c a) => F.GInfo c a -> [CEdge]
-kvEdges fi = selfes ++ concatMap (subcEdges bs) cs ++ concatMap (ebindEdges ebs bs) cs
+kvEdges fi = trace ("\n\n\nkvEdges: selfes = " ++ show selfes ++ "\n1: " ++ show (concatMap (subcEdges bs) cs) ++ "\n2: " ++ show (concatMap (ebindEdges ebs bs) cs) ++ "\nks = " ++ show ks ++ "\n")
+     (selfes ++ concatMap (subcEdges bs) cs ++ concatMap (ebindEdges ebs bs) cs)
   where
     bs     = F.bs fi
     ebs    = F.ebinds fi
@@ -317,7 +318,7 @@ dCut    v = Deps (S.singleton v) S.empty
 {-# SCC elimVars #-}
 elimVars :: (F.TaggedC c a) => Config -> F.GInfo c a -> ([CEdge], Elims F.KVar)
 --------------------------------------------------------------------------------
-elimVars cfg si = (es, ds)
+elimVars cfg si = trace ("\n\nelimVars: result--> " ++ show (es, ds) )    (es, ds)
   where
     ds          = edgeDeps cfg si es
     es          = kvEdges si
@@ -338,7 +339,10 @@ forceKuts xs (Deps cs ns) = Deps (S.union cs xs) (S.difference ns xs)
 
 {-# SCC edgeDeps #-}
 edgeDeps :: (F.TaggedC c a) => Config -> F.GInfo c a -> [CEdge] -> Elims F.KVar
-edgeDeps cfg si  = forceKuts ks
+edgeDeps cfg si edges  = trace ("\nXXXXXXXXXXXXXXXXXXXXXXXXXX\nedgeDeps\nedges:" ++ show edges ++ "\nresult-> " ++ show (edgeDepsZZZ cfg si edges) ++ "\n----end-of-degeDeps\n") (edgeDepsZZZ cfg si edges)
+
+edgeDepsZZZ :: (F.TaggedC c a) => Config -> F.GInfo c a -> [CEdge] -> Elims F.KVar
+edgeDepsZZZ cfg si  = forceKuts ks
                  . edgeDeps' cfg
                  . removeKutEdges ks
                  . filter isRealEdge

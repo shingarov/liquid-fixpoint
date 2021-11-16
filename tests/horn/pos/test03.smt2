@@ -1,4 +1,4 @@
-// TODO move to actual SMTLIB format 
+(fixpoint "--save")
 
 (var $k0 ((Int)))
 

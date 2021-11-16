@@ -36,6 +36,9 @@ import Language.Fixpoint.Types (resStatus, FixResult(Unsafe))
 import qualified Language.Fixpoint.Types.Config as C
 import Language.Fixpoint.Solver.Instantiate (instantiate)
 
+import Debug.Trace
+import Data.Typeable
+
 --------------------------------------------------------------------------------
 solve :: (NFData a, F.Fixpoint a, Show a, F.Loc a) => Config -> F.SInfo a -> IO (F.Result (Integer, a))
 --------------------------------------------------------------------------------
@@ -102,11 +105,20 @@ solve_ :: (NFData a, F.Fixpoint a, F.Loc a)
        -> SolveM (F.Result (Integer, a), Stats)
 --------------------------------------------------------------------------------
 solve_ cfg fi s0 ks wkl = do
+  traceM "INSIDE SOLVE_"
   let s1   = {-# SCC "sol-init" #-} S.init cfg fi ks
   let s2   = mappend s0 s1
+  -- traceM ("***fi = " ++ (show fi))
+  traceM ("***ks = " ++ (showpp ks))
+  traceM ("***wkl = " ++ (showpp wkl))
+  traceM ("***s0 = " ++ (showpp s0))
+  traceM ("***s1 = " ++ (showpp s1))
+  traceM ("***s2 = " ++ (showpp s2))
+  traceM ("***SENDING FROM SOLVE_()")
   (s3, res0) <- sendConcreteBindingsToSMT F.emptyIBindEnv $ \bindingsInSmt -> do
     -- let s3   = solveEbinds fi s2
     s3       <- {- SCC "sol-refine" #-} refine bindingsInSmt s2 wkl
+    traceM ("***s3 = " ++ (showpp s3))
     res0     <- {- SCC "sol-result" #-} result bindingsInSmt cfg wkl s3
     return (s3, res0)
   res <- case resStatus res0 of
@@ -144,8 +156,18 @@ refine
   -> Sol.Solution
   -> W.Worklist a
   -> SolveM Sol.Solution
+
+refine'
+  :: (F.Loc a)
+  => F.IBindEnv
+  -> Sol.Solution
+  -> W.Worklist a
+  -> SolveM Sol.Solution
 --------------------------------------------------------------------------------
-refine bindingsInSmt s w
+
+refine bindingsInSmt s w = trace ("refine:\n" ++ showpp bindingsInSmt)  (refine' bindingsInSmt s w)
+
+refine' bindingsInSmt s w
   | Just (c, w', newScc, rnk) <- W.pop w = do
      i       <- tickIter newScc
      (b, s') <- refineC bindingsInSmt i s c
@@ -169,8 +191,19 @@ refineC
   -> Sol.Solution
   -> F.SimpC a
   -> SolveM (Bool, Sol.Solution)
+ 
+refineC'
+  :: (F.Loc a)
+  => F.IBindEnv
+  -> Int
+  -> Sol.Solution
+  -> F.SimpC a
+  -> SolveM (Bool, Sol.Solution)
 ---------------------------------------------------------------------------
-refineC bindingsInSmt _i s c
+
+refineC bindingsInSmt _i s c = trace "refineC:\n" (refineC' bindingsInSmt _i s c)
+
+refineC' bindingsInSmt _i s c
   | null rhs  = return (False, s)
   | otherwise = do be     <- getBinds
                    let lhs = S.lhsPred bindingsInSmt be s c
@@ -210,6 +243,13 @@ result
   -> SolveM (F.Result (Integer, a))
 --------------------------------------------------------------------------------
 result bindingsInSmt cfg wkl s =
+  trace ("***SENDING FROM RESULT()")
+  trace ("bindingsInSmt = " ++ showpp bindingsInSmt)
+  trace ("cfg = " ++ show cfg)
+  trace ("wkl = " ++ showpp wkl)
+  trace ("s is a: " ++ show (typeOf s))
+  trace ("s = " ++ showpp s)
+  -- traceM ("***s1 = " ++ (showpp s1))
   sendConcreteBindingsToSMT bindingsInSmt $ \bindingsInSmt2 -> do
     lift $ writeLoud "Computing Result"
     stat    <- result_ bindingsInSmt2 cfg wkl s
@@ -227,6 +267,13 @@ solNonCutsResult s = do
   be <- getBinds
   return $ S.nonCutsResult be s
 
+result_'
+  :: (F.Loc a, NFData a)
+  => F.IBindEnv
+  -> Config
+  -> W.Worklist a
+  -> Sol.Solution
+  -> SolveM (F.FixResult (F.SimpC a))
 result_
   :: (F.Loc a, NFData a)
   => F.IBindEnv
@@ -234,20 +281,15 @@ result_
   -> W.Worklist a
   -> Sol.Solution
   -> SolveM (F.FixResult (F.SimpC a))
-result_ bindingsInSmt cfg w s = do
-  filtered <- filterM (isUnsat bindingsInSmt s) cs
+result_ bindingsInSmt cfg w s = trace ("CALLING result_'\nbindingsInSmt: " ++ (show bindingsInSmt)) (result_' bindingsInSmt cfg w s)
+result_' bindingsInSmt _ w s = do
+  filtered <- filterM (isUnsat bindingsInSmt s) (W.unsatCandidates w)
   sts      <- stats
   pure $ res sts filtered
   where
-    cs          = isChecked cfg (W.unsatCandidates w)
     res sts []  = F.Safe sts
     res sts cs' = F.Unsafe sts cs'
 
-isChecked :: Config -> [F.SimpC a] -> [F.SimpC a]
-isChecked cfg cs = case checkCstr cfg of 
-  []   -> cs 
-  ids  -> let s = S.fromList ids in 
-          [c | c <- cs, S.member (F.subcId c) s ]
 
 --------------------------------------------------------------------------------
 -- | `minimizeResult` transforms each KVar's result by removing
@@ -279,7 +321,14 @@ isUnsat
   :: (F.Loc a, NFData a) => F.IBindEnv -> Sol.Solution -> F.SimpC a -> SolveM Bool
 --------------------------------------------------------------------------------
 isUnsat bindingsInSmt s c = do
-  -- lift   $ printf "isUnsat %s" (show (F.subcId c))
+  traceM ("@@@@@@@@@@@@@@@@@ bindingsinSmt: " ++ (showpp bindingsInSmt))
+  traceM ("@@@@@@@@@@@@@@@@@ subcId: " ++ (show (F.subcId c)))
+--traceM ("@@@@@@@@@@@@@@@@@ ? " ++ (show (Sol.sMap s)))
+--traceM ("@@@@@@@@@@@@@@@@@ ? " ++ (show (Sol.gMap s)))
+--traceM ("@@@@@@@@@@@@@@@@@ ? " ++ (show (Sol.sEnv s)))
+  traceM ("@@@@@@@@@@@@@@@@@ sHyp: " ++ (show (Sol.sHyp s)))
+  traceM ("@@@@@@@@@@@@@@@@@ sScp: " ++ (show (Sol.sScp s)))
+  traceM ("@@@@@@@@@@@@@@@@@ sEbd: " ++ (show (Sol.sEbd s)))
   _     <- tickIter True -- newScc
   be    <- getBinds
   let lp = S.lhsPred bindingsInSmt be s c
@@ -306,7 +355,10 @@ rhsPred c
 --------------------------------------------------------------------------------
 isValid :: F.SrcSpan -> F.Expr -> F.Expr -> SolveM Bool
 --------------------------------------------------------------------------------
-isValid sp p q = (not . null) <$> filterValid sp p [(q, ())]
+isValid sp p q = trace "&&&&&&&&&&&&&&&&&&&& isValid" (isValidZZZ sp p q)
+
+isValidZZZ :: F.SrcSpan -> F.Expr -> F.Expr -> SolveM Bool
+isValidZZZ sp p q = (not . null) <$> filterValid sp p [(q, ())]
 
 cstrSpan :: (F.Loc a) => F.SimpC a -> F.SrcSpan
 cstrSpan = F.srcSpan . F.sinfo
