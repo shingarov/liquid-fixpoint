@@ -26,7 +26,6 @@ module Language.Fixpoint.Solver (
   , simplifyFInfo
 ) where
 
-import           Control.Concurrent                 (setNumCapabilities)
 import qualified Data.HashMap.Strict              as HashMap
 import qualified Data.Store                       as S
 import           Data.Aeson                         (ToJSON, encode)
@@ -108,13 +107,10 @@ solve cfg q
 
 solve' :: (NFData a, Fixpoint a, Show a, Loc a) => Solver a
 solve' cfg q = do
+  writeLoud ("\nSolver.solve': ws= " ++ show (ws q))
   when (save cfg) $ saveQuery   cfg q
-  configSW  cfg     solveNative cfg q
+  solveSeqWith     solveNative cfg q
 
-configSW :: (NFData a, Fixpoint a, Show a, Loc a) => Config -> Solver a -> Solver a
-configSW cfg
-  | multicore cfg = solveParWith
-  | otherwise     = solveSeqWith
 
 --------------------------------------------------------------------------------
 readFInfo :: FilePath -> IO (FInfo (), [String])
@@ -144,37 +140,6 @@ solveSeqWith s c fi0 = {- withProgressFI fi $ -} s c fi
   where
     fi               = slice c fi0
 
---------------------------------------------------------------------------------
--- | Solve in parallel after partitioning an FInfo to indepdendant parts
---------------------------------------------------------------------------------
-solveParWith :: (Fixpoint a) => Solver a -> Solver a
---------------------------------------------------------------------------------
-solveParWith s c fi0 = do
-  -- putStrLn "Using Parallel Solver \n"
-  let fi    = slice c fi0
-  mci      <- mcInfo c
-  let fis   = partition' (Just mci) fi
-  writeLoud $ "Number of partitions : " ++ show (length fis)
-  writeLoud $ "number of cores      : " ++ show (cores c)
-  writeLoud $ "minimum part size    : " ++ show (minPartSize c)
-  writeLoud $ "maximum part size    : " ++ show (maxPartSize c)
-  case fis of
-    []        -> errorstar "partiton' returned empty list!"
-    [onePart] -> s c onePart
-    _         -> inParallelUsing (f s c) $ zip [1..] fis
-    where
-      f s c (j, fi) = s (c {srcFile = queryFile (Part j) c}) fi
-
---------------------------------------------------------------------------------
--- | Solve a list of FInfos using the provided solver function in parallel
---------------------------------------------------------------------------------
-inParallelUsing :: (a -> IO (Result b)) -> [a] -> IO (Result b)
---------------------------------------------------------------------------------
-inParallelUsing f xs = do
-   setNumCapabilities (length xs)
-   rs <- asyncMapM f xs
-   return $ mconcat rs
-
 
 --------------------------------------------------------------------------------
 -- | Native Haskell Solver -----------------------------------------------------
@@ -199,7 +164,9 @@ loudDump i cfg si = when False (writeLoud $ msg ++ render (toFixpoint cfg si))
 simplifyFInfo :: (NFData a, Fixpoint a, Show a, Loc a)
                => Config -> FInfo a -> IO (SInfo a)
 simplifyFInfo !cfg !fi0 = do
-  -- writeLoud $ "fq file in: \n" ++ render (toFixpoint cfg fi)
+  writeLoud $ "*** IN simplifyFInfo"
+  writeLoud $ "fq file in: \n" ++ render (toFixpoint cfg fi0)
+  writeLoud $ "\n@@@@@@@@@@@@@@@ fiKVars fi0: " ++ show (ws fi0)
   -- rnf fi0 `seq` donePhase Loud "Read Constraints"
   -- let qs   = quals fi0
   -- whenLoud $ print qs
@@ -207,18 +174,19 @@ simplifyFInfo !cfg !fi0 = do
   reducedFi <- reduceFInfo cfg fi0
   let fi1   = reducedFi { quals = remakeQual <$> quals reducedFi }
   let si0   = {- SCC "convertFormat" #-} convertFormat fi1
-  -- writeLoud $ "fq file after format convert: \n" ++ render (toFixpoint cfg si0)
-  -- rnf si0 `seq` donePhase Loud "Format Conversion"
+  writeLoud $ "fq file after format convert: \n" ++ render (toFixpoint cfg si0)
+  writeLoud $ "\n@@@@@@@@@@@@@@@ fiKVars si0: " ++ show (ws si0)
+  rnf si0 `seq` donePhase Loud "Format Conversion"
   let si1   = either die id $ ({- SCC "sanitize" #-} sanitize cfg $!! si0)
-  -- writeLoud $ "fq file after sanitize: \n" ++ render (toFixpoint cfg si1)
-  -- rnf si1 `seq` donePhase Loud "Validated Constraints"
+  writeLoud $ "fq file after sanitize: \n" ++ render (toFixpoint cfg si1)
+  rnf si1 `seq` donePhase Loud "Validated Constraints"
   graphStatistics cfg si1
   let si2  = {- SCC "wfcUniqify" #-} wfcUniqify $!! si1
   let si3  = {- SCC "renameAll"  #-} renameAll  $!! si2
   rnf si3 `seq` whenLoud $ donePhase Loud "Uniqify & Rename"
   loudDump 1 cfg si3
   let si4  = {- SCC "defunction" #-} defunctionalize cfg $!! si3
-  -- putStrLn $ "AXIOMS: " ++ showpp (asserts si4)
+  putStrLn $ "AXIOMS: " ++ showpp (asserts si4)
   loudDump 2 cfg si4
   let si5  = {- SCC "elaborate"  #-} elaborate (atLoc dummySpan "solver") (symbolEnv cfg si4) si4
   loudDump 3 cfg si5
@@ -239,14 +207,16 @@ reduceFInfo cfg fi = do
     return reducedFi
 
 solveNative' !cfg !fi0 = do
+  writeLoud $ "\nsolveNative': ws=" ++ show (ws fi0)
   si6 <- simplifyFInfo cfg fi0
+  writeLoud $ "\n\n\nDONE simplifyFInfo, ABOUT TO CALL Sol.solve\nsi6:\n" ++ (show si6) ++ "\n*** END OF si6 ***\n\n"
   res <- {- SCC "Sol.solve" #-} Sol.solve cfg $!! si6
   -- rnf soln `seq` donePhase Loud "Solve2"
-  --let stat = resStatus res
+  let statuus = resStatus res
   -- saveSolution cfg res
   when (save cfg) $ saveSolution cfg res
-  -- writeLoud $ "\nSolution:\n"  ++ showpp (resSolution res)
-  -- colorStrLn (colorResult stat) (show stat)
+  writeLoud $ "\nSolution:\n"  ++ showpp (resSolution res)
+  colorStrLn (colorResult statuus) (show statuus)
   return res
 
 --------------------------------------------------------------------------------

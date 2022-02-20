@@ -17,6 +17,7 @@ import           Language.Fixpoint.Types.Visitor   (kvarsExpr, isConcC)
 import           Language.Fixpoint.Graph
 import           Language.Fixpoint.Misc            (safeLookup, group, errorstar)
 import           Language.Fixpoint.Solver.Sanitize
+import Debug.Trace
 
 --------------------------------------------------------------------------------
 -- | `solverInfo` constructs a `SolverInfo` comprising the Solution and various
@@ -25,7 +26,7 @@ import           Language.Fixpoint.Solver.Sanitize
 {-# SCC solverInfo #-}
 solverInfo :: Config -> SInfo a -> SolverInfo a b
 --------------------------------------------------------------------------------
-solverInfo cfg sI = SI sHyp sI' cD cKs
+solverInfo cfg sI = trace ("\n\n(((((((((((((((((((((((((((((((((((( solverInfo!!!\nstrict sE--> " ++ show sE ++ "\n---*") (SI sHyp sI' cD cKs)
   where
     cD             = elimDeps     sI es nKs ebs
     sI'            = cutSInfo     sI kI cKs
@@ -69,7 +70,10 @@ type KIndex = M.HashMap KVar [Integer]
 --------------------------------------------------------------------------------
 kIndex     :: SInfo a -> KIndex
 --------------------------------------------------------------------------------
-kIndex si  = group [(k, i) | (i, c) <- iCs, k <- rkvars c]
+kIndex si  = trace ("\n\n\nkIndex result --> " ++ show ( kIndexZZZ si  )) (kIndexZZZ si)
+
+kIndexZZZ     :: SInfo a -> KIndex
+kIndexZZZ si  = group [(k, i) | (i, c) <- iCs, k <- rkvars c]
   where
     iCs    = M.toList (cm si)
     rkvars = kvarsExpr . crhs

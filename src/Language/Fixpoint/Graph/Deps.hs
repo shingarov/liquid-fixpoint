@@ -52,7 +52,7 @@ import qualified Data.Graph                           as G
 import           Data.Function (on)
 import           Data.Hashable
 import           Text.PrettyPrint.HughesPJ.Compat
-import           Debug.Trace (trace)
+import           Debug.Trace
 
 --------------------------------------------------------------------------------
 -- | Compute constraints that transitively affect target constraints,
@@ -159,7 +159,7 @@ cGraph fi = CGraph { gEdges = es
 --------------------------------------------------------------------------------
 graphRanks :: G.Graph -> (G.Vertex -> DepEdge) -> (CMap Int, [[G.Vertex]])
 ---------------------------------------------------------------------------
-graphRanks g vf = (M.fromList irs, sccs)
+graphRanks g vf = trace ("\n\n\n************** GRAPH: g = " ++ (show g) ++ "\nG.scc = " ++ show (G.scc g) ++ "\nflatten = " ++ show ( map flatten $ G.scc g ))   (M.fromList irs, sccs)
   where
     irs        = [(v2i v, r) | (r, vs) <- rvss, v <- vs ]
     rvss       = zip [0..] sccs
@@ -171,7 +171,7 @@ graphRanks g vf = (M.fromList irs, sccs)
 --------------------------------------------------------------------------------
 kvSucc :: (F.TaggedC c a) => F.GInfo c a -> CMap [F.SubcId]
 --------------------------------------------------------------------------------
-kvSucc fi = succs cm rdBy
+kvSucc fi = trace ("\n\n\n\n********* kvSucc: " ++ show (succs cm rdBy)) (succs cm rdBy)
   where
     rdBy  = kvReadBy fi
     cm    = F.cm     fi
@@ -180,7 +180,7 @@ succs :: (F.TaggedC c a) => CMap (c a) -> KVRead -> CMap [F.SubcId]
 succs cm rdBy = sortNub . concatMap kvReads . kvWrites <$> cm
   where
     kvReads k = M.lookupDefault [] k rdBy
-    kvWrites  = V.kvarsExpr . F.crhs
+    kvWrites l = trace ("\nkvWrites: " ++ show ((V.kvarsExpr . F.crhs) l)) ((V.kvarsExpr . F.crhs) l)
 
 --------------------------------------------------------------------------------
 kvWriteBy :: (F.TaggedC c a) => CMap (c a) -> F.SubcId -> [F.KVar]
@@ -212,7 +212,8 @@ edgeGraph es = KVGraph [(v, v, vs) | (v, vs) <- groupList es ]
 -- need to plumb list of ebinds
 {-# SCC kvEdges #-}
 kvEdges :: (F.TaggedC c a) => F.GInfo c a -> [CEdge]
-kvEdges fi = selfes ++ concatMap (subcEdges bs) cs ++ concatMap (ebindEdges ebs bs) cs
+kvEdges fi = trace ("\n\n\nkvEdges: selfes = " ++ show selfes ++ "\n1: " ++ show (concatMap (subcEdges bs) cs) ++ "\n2: " ++ show (concatMap (ebindEdges ebs bs) cs) ++ "\nks = " ++ show ks ++ "\n")
+     (selfes ++ concatMap (subcEdges bs) cs ++ concatMap (ebindEdges ebs bs) cs)
   where
     bs     = F.bs fi
     ebs    = F.ebinds fi
@@ -317,7 +318,7 @@ dCut    v = Deps (S.singleton v) S.empty
 {-# SCC elimVars #-}
 elimVars :: (F.TaggedC c a) => Config -> F.GInfo c a -> ([CEdge], Elims F.KVar)
 --------------------------------------------------------------------------------
-elimVars cfg si = (es, ds)
+elimVars cfg si = trace ("\n\nelimVars: result--> " ++ show (es, ds) )    (es, ds)
   where
     ds          = edgeDeps cfg si es
     es          = kvEdges si
@@ -338,7 +339,10 @@ forceKuts xs (Deps cs ns) = Deps (S.union cs xs) (S.difference ns xs)
 
 {-# SCC edgeDeps #-}
 edgeDeps :: (F.TaggedC c a) => Config -> F.GInfo c a -> [CEdge] -> Elims F.KVar
-edgeDeps cfg si  = forceKuts ks
+edgeDeps cfg si edges  = trace ("\nXXXXXXXXXXXXXXXXXXXXXXXXXX\nedgeDeps\nedges:" ++ show edges ++ "\nresult-> " ++ show (edgeDepsZZZ cfg si edges) ++ "\n----end-of-degeDeps\n") (edgeDepsZZZ cfg si edges)
+
+edgeDepsZZZ :: (F.TaggedC c a) => Config -> F.GInfo c a -> [CEdge] -> Elims F.KVar
+edgeDepsZZZ cfg si  = forceKuts ks
                  . edgeDeps' cfg
                  . removeKutEdges ks
                  . filter isRealEdge

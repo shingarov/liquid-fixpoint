@@ -5,6 +5,7 @@
 
 module Language.Fixpoint.Horn.Solve (solveHorn, solve) where
 
+--import Data.Typeable
 import System.Exit ( ExitCode )
 import Control.DeepSeq ( NFData )
 import Control.Monad (when)
@@ -22,7 +23,7 @@ import Language.Fixpoint.Horn.Info ( hornFInfo )
 
 import System.Console.CmdArgs.Verbosity ( whenLoud )
 
--- import Debug.Trace (traceM)
+import Debug.Trace (traceM)
 
 ----------------------------------------------------------------------------------
 solveHorn :: F.Config -> IO ExitCode
@@ -55,7 +56,7 @@ saveHornQuery cfg q = do
   writeFile hq $ render (F.pprint q)
 
 ----------------------------------------------------------------------------------
-eliminate :: (F.PPrint a) => F.Config -> H.Query a -> IO (H.Query a)
+eliminate :: (F.PPrint a, F.Fixpoint a) => F.Config -> H.Query a -> IO (H.Query a)
 ----------------------------------------------------------------------------------
 eliminate cfg q
   | F.eliminate cfg == F.Existentials = do
@@ -76,5 +77,7 @@ solve cfg q = do
   whenLoud $ putStrLn "Horn Uniq:"
   whenLoud $ putStrLn $ F.showpp c
   q <- eliminate cfg ({- void $ -} q { H.qCstr = c })
-  Solver.solve cfg (hornFInfo cfg q)
+  let fi = hornFInfo cfg q
+  traceM ("\nOUTER SOLVE: ws=" ++ show (F.ws fi))
+  Solver.solve cfg fi
 
