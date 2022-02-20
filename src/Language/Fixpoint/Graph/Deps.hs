@@ -146,9 +146,21 @@ cGraph fi = CGraph { gEdges = es
                    , gSccs  = length sccs }
   where
     es             = [(i, i, M.lookupDefault [] i next) | i <- M.keys $ F.cm fi]
-    next           = kvSucc fi
+    next           = kvSucc (printExampleRanks fi)
     (g, vf, _)     = G.graphFromEdges es
     (outRs, sccs)  = graphRanks g vf
+
+
+printExampleRanks :: a -> a
+
+printExampleRanks fi =
+    (trace ("\n\n\n\n*** EXAMPLE RANKS ***\ng = " ++ (show g) ++ "\noutRs = " ++ (show outRs) ++ "\nsccs = " ++ (show sccs) ++ "\n\n")) fi
+      where
+        ab2xyz = [ (100,10,[20]), (200,20,[10,30]), (300,30,[40]), (400,40,[50]), (500,50,[30]) ]
+        (g, vf, _)     = G.graphFromEdges ab2xyz
+        (outRs, sccs)  = graphRanks g vf
+
+
 
 --------------------------------------------------------------------------------
 -- | Ranks from Graph ----------------------------------------------------------
