@@ -41,7 +41,7 @@ import           Language.Fixpoint.Solver.Sanitize
 
 -- DEBUG
 import Text.Printf (printf)
--- import Debug.Trace (trace)
+import Debug.Trace
 
 
 --------------------------------------------------------------------------------
@@ -84,7 +84,7 @@ qualSig q = [ p { F.qpSym = F.dummyName }  | p <- F.qParams q ]
 --------------------------------------------------------------------------------
 
 refine :: F.SInfo a -> QCluster -> F.SEnv F.Sort -> F.WfC a -> (F.KVar, Sol.QBind)
-refine fi qs genv w = refineK (allowHOquals fi) env qs (F.wrft w)
+refine fi qs genv w = trace ("\n\n\nIn refine: env = " ++ F.showpp env ++ "\ngenv = " ++ F.showpp genv ++ "\nwenv = " ++ F.showpp wenv)  (refineK (allowHOquals fi) env qs (F.wrft w))
   where
     env             = wenv <> genv
     wenv            = F.sr_sort <$> F.fromListSEnv (F.envCs (F.bs fi) (F.wenv w))
@@ -131,7 +131,7 @@ instKSig ho env v t qsig = do
   ixs       <- matchP senv tyss [(i0, qs0)] (applyQPP su0 <$> qps)
   -- return     $ F.notracepp msg (reverse ixs)
   ys        <- instSymbol tyss (tail $ reverse ixs)
-  return (v:ys)
+  return (trace  ("\n\n\ninstKSig: tyss = " ++ show tyss ++ "\nixs = " ++ show ixs ++ "\nys = " ++ show ys ++ "\nv = " ++ show v)   (v:ys)   )
   where
     -- msg        = "instKSig " ++ F.showpp qsig
     qp : qps   = qsig
@@ -167,7 +167,7 @@ instSymbol tyss = go
 --     senv       = (`F.lookupSEnvWithDistance` env)
 
 instCands :: Bool -> F.SEnv F.Sort -> [(F.Sort, [F.Symbol])]
-instCands ho env = filter isOk tyss
+instCands ho env = trace ("\ninstCands: " ++ show ho ++ "\nenv = " ++ F.showpp env ++ "\ntyss = " ++ show tyss)    (filter isOk tyss)
   where
     tyss      = Misc.groupList [(t, x) | (x, t) <- xts]
     isOk      = if ho then const True else isNothing . F.functionSort . fst
@@ -207,12 +207,12 @@ applyQPP su qp = qp
 candidatesP :: So.Env -> [(SortIdx, F.Sort, a)] -> F.QualParam ->
                [(So.TVSubst, SortIdx, QualPattern)]
 --------------------------------------------------------------------------------
-candidatesP env tyss x =
-    [(su, idx, qPat)
-        | (idx, t,_)  <- tyss
-        , su          <- maybeToList (So.unifyFast mono env xt t)
-    ]
+candidatesP env tyss x =  trace ("\n\n\ncandidatesP:  \n ---> " ++ show z) z
   where
+    z = [(su, idx, qPat)
+         | (idx, t,_)  <- tyss
+         , su          <- maybeToList (So.unifyFast mono env xt t)
+        ]
     xt   = F.qpSort x
     qPat = F.qpPat  x
     mono = So.isMono xt
