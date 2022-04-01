@@ -201,9 +201,9 @@ apply g s bs      = (F.pAnd (pks:ps), kI)
 
 
 envConcKVars :: CombinedEnv -> Sol.Sol a Sol.QBind -> F.IBindEnv -> ([F.Expr], [F.KVSub], [F.KVSub])
-envConcKVars g s bs = (concat pss, concat kss, L.nubBy (\x y -> F.ksuKVar x == F.ksuKVar y) $ concat gss)
+envConcKVars g s bs = trace ("\n\n****envConKVars:\nis" ++ show is ++ "\nxrs = " ++ show xrs)  (concat pss, concat kss, L.nubBy (\x y -> F.ksuKVar x == F.ksuKVar y) $ concat gss)
   where
-    (pss, kss, gss) = unzip3 [ F.notracepp ("sortedReftConcKVars" ++ F.showpp sr) $ F.sortedReftConcKVars x sr | (x, sr) <- xrs ]
+    (pss, kss, gss) = unzip3 [ F.tracepp ("sortedReftConcKVars" ++ F.showpp sr) $ F.sortedReftConcKVars x sr | (x, sr) <- xrs ]
     xrs             = lookupBindEnvExt g s <$> is
     is              = F.elemsIBindEnv bs
 
@@ -236,16 +236,16 @@ ebindReft g s c = F.pAnd [ fst $ apply g' s bs, F.crhs c ]
     bs          = F.senv c
 
 exElim :: F.SEnv (F.BindId, F.Sort) -> F.IBindEnv -> F.BindId -> F.Pred -> F.Pred
-exElim env ienv xi p = F.notracepp msg (F.pExist yts p)
+exElim env ienv xi p = F.tracepp msg (F.pExist yts p)
   where
-    msg         = "exElim" -- printf "exElim: ix = %d, p = %s" xi (F.showpp p)
+    msg         = printf "exElim: ix = %d, p = %s" xi (F.showpp p)
     yts         = [ (y, yt) | y        <- F.syms p
                             , (yi, yt) <- maybeToList (F.lookupSEnv y env)
                             , xi < yi
                             , yi `F.memberIBindEnv` ienv                  ]
 
 applyKVars :: CombinedEnv -> Sol.Sol a Sol.QBind -> [F.KVSub] -> ExprInfo
-applyKVars g s = trace "\n\n\napplyKVars!\n"   (mrExprInfos (applyKVar g s) F.pAnd mconcat)
+applyKVars g s kk = trace ("\n\n\napplyKVars: kk = " ++ show kk)   ((mrExprInfos (applyKVar g s) F.pAnd mconcat) kk)
 
 applyKVar :: CombinedEnv -> Sol.Sol a Sol.QBind -> F.KVSub -> ExprInfo
 applyKVar g s ksu = case Sol.lookup s (F.ksuKVar ksu) of
