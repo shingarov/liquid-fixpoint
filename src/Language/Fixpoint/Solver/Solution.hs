@@ -38,7 +38,7 @@ import           Language.Fixpoint.Solver.Sanitize
 
 -- DEBUG
 import Text.Printf (printf)
--- import           Debug.Trace
+import           Debug.Trace
 
 
 --------------------------------------------------------------------------------
@@ -245,7 +245,7 @@ exElim env ienv xi p = F.notracepp msg (F.pExist yts p)
                             , yi `F.memberIBindEnv` ienv                  ]
 
 applyKVars :: CombinedEnv -> Sol.Sol a Sol.QBind -> [F.KVSub] -> ExprInfo
-applyKVars g s = mrExprInfos (applyKVar g s) F.pAnd mconcat
+applyKVars g s = trace "\n\n\napplyKVars!\n"   (mrExprInfos (applyKVar g s) F.pAnd mconcat)
 
 applyKVar :: CombinedEnv -> Sol.Sol a Sol.QBind -> F.KVSub -> ExprInfo
 applyKVar g s ksu = case Sol.lookup s (F.ksuKVar ksu) of
