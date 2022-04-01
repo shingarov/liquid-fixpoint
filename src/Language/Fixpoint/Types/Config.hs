@@ -34,7 +34,7 @@ import System.Console.CmdArgs.Explicit
 import System.Environment
 
 import Language.Fixpoint.Utils.Files
-
+import Debug.Trace
 
 --------------------------------------------------------------------------------
 withPragmas :: Config -> [String] -> IO Config
@@ -148,7 +148,13 @@ instance Show Eliminate where
 
 
 useElim :: Config -> Bool
-useElim cfg = eliminate cfg /= None
+useElim' :: Config -> Bool
+
+useElim cfg = trace ("\n\nuseElim: " ++ show zzz)  zzz
+  where
+    zzz = useElim' cfg
+
+useElim' cfg = eliminate cfg /= None
 
 ---------------------------------------------------------------------------------------
 

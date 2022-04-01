@@ -19,6 +19,8 @@ import qualified Language.Fixpoint.Types        as F
 import qualified Language.Fixpoint.Types.Config as F
 import qualified Language.Fixpoint.Horn.Types   as H
 
+import Debug.Trace
+
 hornFInfo :: F.Config -> H.Query a -> F.FInfo a
 hornFInfo cfg q = mempty
   { F.cm        = cs
@@ -119,7 +121,7 @@ hornWfs be vars = (be', kve)
     kname       = H.hvName . kvVar
 
 kvInfo :: F.BindEnv -> H.Var a -> (F.BindEnv, KVInfo a)
-kvInfo be k       = (be', KVInfo k (fst <$> xts) wfc)
+kvInfo be k       = trace ("\n\n\nkvInfo:\nbe = " ++ show be ++ "\nk = " ++ show k ++ "\nxts = " ++ show xts ++ "\nbe' = " ++ show be' ++ "\n\n")      (be', KVInfo k (fst <$> xts) wfc)
   where
     -- make the WfC
     wfc           = F.WfC wenv wrft  (H.hvMeta k)

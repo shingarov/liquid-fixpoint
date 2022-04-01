@@ -873,8 +873,14 @@ doelim k bss (Any (Bind x t p) c) =
 
 -- If k is in the guard then returns a Left list of that k and the remaining preds in the guard
 -- If k is not in the guard returns a Right of the pred
-findKVarInGuard :: F.Symbol -> Pred -> Either ([(F.Symbol, [F.Symbol])], [Pred]) Pred
-findKVarInGuard k (PAnd ps) =
+findKVarInGuard  :: F.Symbol -> Pred -> Either ([(F.Symbol, [F.Symbol])], [Pred]) Pred
+findKVarInGuard' :: F.Symbol -> Pred -> Either ([(F.Symbol, [F.Symbol])], [Pred]) Pred
+
+findKVarInGuard k p = trace "\nfindKVarInGuard!\n" zzz
+  where
+    zzz = findKVarInGuard' k p
+
+findKVarInGuard' k (PAnd ps) =
   if null lefts
     then Right (PAnd ps) -- kvar not found
     else Left $ (newLefts, newRights)
@@ -882,10 +888,10 @@ findKVarInGuard k (PAnd ps) =
         (lefts, rights) = partitionEithers findResults
         newLefts = concat $ map fst lefts
         newRights = concat (snd <$> lefts) ++ rights
-findKVarInGuard k p@(Var k' xs)
+findKVarInGuard' k p@(Var k' xs)
   | k == k' = Left ([(k', xs)], [])
   | otherwise = Right p
-findKVarInGuard _ p = Right p
+findKVarInGuard' _ p = Right p
 
 -- | Returns a list of KVars with their arguments that are present as
 --

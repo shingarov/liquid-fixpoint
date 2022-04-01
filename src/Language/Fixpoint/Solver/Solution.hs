@@ -41,7 +41,7 @@ import           Language.Fixpoint.Solver.Sanitize
 
 -- DEBUG
 import Text.Printf (printf)
--- import Debug.Trace (trace)
+import Debug.Trace (trace)
 
 
 --------------------------------------------------------------------------------
@@ -310,9 +310,13 @@ apply g s bs      = (F.conj (pks:ps), kI)   -- see [NOTE: pAnd-SLOW]
 
 
 envConcKVars :: CombinedEnv -> Sol.Sol a Sol.QBind -> F.IBindEnv -> ([F.Expr], [F.KVSub], [F.KVSub])
-envConcKVars g s bs = (concat pss, concat kss, L.nubBy (\x y -> F.ksuKVar x == F.ksuKVar y) $ concat gss)
+envConcKVars g s bs = trace ("\n\n\nenvConcKVars:\nis = " ++ show is ++ "\nxrs = " ++ show xrs ++ "\nz2 = " ++ show z2)   zzz
   where
-    (pss, kss, gss) = unzip3 [ F.notracepp ("sortedReftConcKVars" ++ F.showpp sr) $ F.sortedReftConcKVars x sr | (x, sr) <- xrs ]
+    zzz = (z1, z2, z3)
+    z1  = concat pss
+    z2  = concat kss
+    z3  = L.nubBy (\x y -> F.ksuKVar x == F.ksuKVar y) $ concat gss
+    (pss, kss, gss) = unzip3 [ F.tracepp ("*** sortedReftConcKVars ***" ++ F.showpp sr) $ F.sortedReftConcKVars x sr | (x, sr) <- xrs ]
     xrs             = lookupBindEnvExt g s <$> is
     is              = F.elemsIBindEnv bs
 
@@ -320,7 +324,7 @@ lookupBindEnvExt :: CombinedEnv -> Sol.Sol a Sol.QBind -> F.BindId -> (F.Symbol,
 lookupBindEnvExt g s i
   | Just p <- ebSol g {ceBindingsInSmt = F.emptyIBindEnv} s i = (x, sr { F.sr_reft = F.Reft (x, p) })
   | F.memberIBindEnv i (ceBindingsInSmt g) =
-      (x, sr { F.sr_reft = F.Reft (x, F.EVar (F.bindSymbol (fromIntegral i)))})
+      trace ("lookupBindEnvExt: MEMBER! x=" ++ show x ++ " i=" ++ show i)   (x, sr { F.sr_reft = F.Reft (x, F.EVar (F.bindSymbol (fromIntegral i)))})
   | otherwise             = (x, sr)
    where 
       (x, sr)              = F.lookupBindEnv i (ceBEnv g) 
@@ -356,7 +360,7 @@ exElim env ienv xi p = F.notracepp msg (F.pExist yts p)
                             , yi `F.memberIBindEnv` ienv                  ]
 
 applyKVars :: CombinedEnv -> Sol.Sol a Sol.QBind -> [F.KVSub] -> ExprInfo
-applyKVars g s = mrExprInfos (applyKVar g s) F.pAndNoDedup mconcat
+applyKVars g s kk = trace ("\n\n\napplyKVars: kk = " ++ show kk)    ((mrExprInfos (applyKVar g s) F.pAndNoDedup mconcat) kk)
 
 applyKVar :: CombinedEnv -> Sol.Sol a Sol.QBind -> F.KVSub -> ExprInfo
 applyKVar g s ksu = case Sol.lookup s (F.ksuKVar ksu) of
@@ -444,7 +448,7 @@ type Binders = [(F.Symbol, F.Sort)]
 cubePredExc :: CombinedEnv -> Sol.Sol a Sol.QBind -> F.KVSub -> Sol.Cube -> F.IBindEnv
             -> ((Binders, F.Pred, F.Pred), KInfo)
 
-cubePredExc g s ksu c bs' = (cubeP, extendKInfo kI (Sol.cuTag c))
+cubePredExc g s ksu c bs' = trace ("\n\ncubePredExc:\nsu = " ++ show su)   (cubeP, extendKInfo kI (Sol.cuTag c))
   where
     cubeP           = (xts, psu, elabExist sp s yts' (F.pAndNoDedup [p', psu']) )
     sp              = F.srcSpan g
@@ -486,7 +490,7 @@ cubePredExc g s ksu c bs' = (cubeP, extendKInfo kI (Sol.cuTag c))
         to hack typeclasses current.)
  -}
 substElim :: F.SymEnv -> F.SEnv F.Sort -> CombinedEnv -> F.KVar -> F.Subst -> ([(F.Symbol, F.Sort)], F.Pred)
-substElim syEnv sEnv g _ (F.Su m) = (xts, p)
+substElim syEnv sEnv g k (F.Su m) = trace ("\n\n\nsubstElim:\nk = " ++ show k ++ "\nm = " ++ show m ++ "\ng.ceIEnv = " ++ show (ceIEnv g) ++ "\ng.ceBInv = " ++ show (ceBEnv g))     (xts, p)
   where
     p      = F.pAnd [ mkSubst sp syEnv x (substSort sEnv frees x t) e t | (x, e, t) <- xets  ]
     xts    = [ (x, t)    | (x, _, t) <- xets, not (S.member x frees) ]
