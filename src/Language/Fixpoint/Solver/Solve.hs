@@ -228,7 +228,7 @@ solNonCutsResult s = do
   return $ S.nonCutsResult be s
 
 result_
-  :: (F.Loc a, NFData a)
+  :: (F.Loc a, NFData a, Fixpoint a)
   => F.IBindEnv
   -> Config
   -> W.Worklist a

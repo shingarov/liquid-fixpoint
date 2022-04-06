@@ -63,6 +63,19 @@ instance PTable Stats where
 instance PTable (Worklist a) where
   ptable = ptable . stats
 
+instance Fixpoint a => Show (Worklist a) where
+  show w =
+    "WL {" ++
+    "\nwConcCs = " ++ show (wConcCs w) ++
+    "\nwCs = " ++ show (wCs w) ++ 
+    "\nwCm = " ++ show (wCm w) ++
+    "\nwPend = " ++ show (wPend w) ++
+    "\nwDeps = " ++ show (wDeps w) ++
+    "\nwRankm = " ++ show (wRankm w) ++
+    "\nwLast = " ++ show (wLast w) ++
+    "\n}\n"
+
+
 
 -- | WorkItems ------------------------------------------------------------
 

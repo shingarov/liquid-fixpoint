@@ -219,6 +219,17 @@ data Sol b a = Sol
   , sxEnv :: !(SEnv (BindId, Sort))      --   TODO: merge with sEnv? used for sorts of ebinds to solve ebinds in lhsPred
   } deriving (Generic)
 
+instance Show a => Show (Sol b a) where
+  show s = "Sol {" ++
+    "\nsEnv  = " ++ "...enable in Solutions.hs..." ++ -- show (sEnv s) ++
+    "\nsMap  = " ++ show (sMap s) ++
+    "\nsHyp  = " ++ show (sHyp s) ++
+    "\nsScp  = " ++ show (sScp s) ++
+    "\nsEbd  = " ++ show (sEbd s) ++
+    "\nsxEnv = " ++ show (sxEnv s) ++
+    "\n}\n"
+
+
 deriving instance (NFData b, NFData a) => NFData (Sol b a)
 
 updateGMap :: Sol b a -> M.HashMap KVar b -> Sol b a
