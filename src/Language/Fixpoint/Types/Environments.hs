@@ -275,8 +275,8 @@ instance Fixpoint BindEnv where
 instance (Fixpoint a) => Fixpoint (SEnv a) where
    toFix (SE m)   = toFix (hashMapToAscList m)
 
-instance Fixpoint (SEnv a) => Show (SEnv a) where
-  show = render . toFix
+instance Show (SEnv a) where
+  show (SE h) = "SEnv keys=" ++ (show $ (fst <$> (M.toList h)))
 
 instance Semigroup (SEnv a) where
   s1 <> s2 = SE $ M.union (seBinds s1) (seBinds s2)
