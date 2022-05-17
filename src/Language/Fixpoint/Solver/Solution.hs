@@ -38,7 +38,7 @@ import           Language.Fixpoint.Solver.Sanitize
 
 -- DEBUG
 import Text.Printf (printf)
--- import           Debug.Trace
+import           Debug.Trace
 
 
 --------------------------------------------------------------------------------
@@ -161,12 +161,12 @@ applyQPSubst _ p
 --------------------------------------------------------------------------------
 okInst :: F.SEnv F.Sort -> F.Symbol -> F.Sort -> Sol.EQual -> Bool
 --------------------------------------------------------------------------------
-okInst env v t eq = isNothing tc
+okInst env v t eq = trace msg (isNothing tc)
   where
     sr            = F.RR t (F.Reft (v, p))
     p             = Sol.eqPred eq
     tc            = So.checkSorted (F.srcSpan eq) env sr 
-    -- _msg          = printf "okInst: t = %s, eq = %s, env = %s" (F.showpp t) (F.showpp eq) (F.showpp env)
+    msg          = printf "okInst: t = %s, eq = %s, env = %s\n --> %s\n\n" (F.showpp t) (F.showpp eq) (F.showpp env) (F.showpp tc)
 
 
 --------------------------------------------------------------------------------
