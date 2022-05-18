@@ -127,7 +127,7 @@ applyQP su qsu qp = qp { qpSort = So.apply     su  (qpSort qp)
 candidates :: So.Env -> [(F.Sort, [F.Symbol])] -> F.QualParam 
            -> [(So.TVSubst, QPSubst, F.Symbol)]
 --------------------------------------------------------------------------------
-candidates env tyss x = -- traceShow _msg
+candidates env tyss x = traceShow msg
     [(su, qsu, y) | (t, ys)  <- tyss
                   , su       <- maybeToList (So.unifyFast mono env xt t)
                   , y        <- ys
@@ -136,7 +136,7 @@ candidates env tyss x = -- traceShow _msg
   where
     xt   = F.qpSort x
     mono = So.isMono xt
-    _msg = "candidates tyss :=" ++ F.showpp tyss ++ "tx := " ++ F.showpp xt
+    msg = "candidates:\n tyss = " ++ F.showpp tyss ++ "\n xt = " ++ F.showpp xt ++ "\n"
 
 matchSym :: F.QualParam -> F.Symbol -> Maybe QPSubst 
 matchSym qp y' = case F.qpPat qp of
