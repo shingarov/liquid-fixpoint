@@ -97,9 +97,9 @@ instKQ :: Bool
 instKQ ho env v t q = do 
   (su0, qsu0, v0) <- candidates senv [(t, [v])] qp
   xs              <- match senv tyss [v0] (applyQP su0 qsu0 <$> qps) 
-  return           $ Sol.eQual q (F.notracepp msg (reverse xs))
+  return           $ Sol.eQual q (F.tracepp msg (reverse xs))
   where
-    msg        = "instKQ " ++ F.showpp (F.qName q) ++ F.showpp (F.qParams q)
+    msg        = "instKQ:\nqName=" ++ F.showpp (F.qName q) ++ "\nqParams=" ++ F.showpp (F.qParams q) ++ "\ntyss=" ++ F.showpp tyss ++ "\n"
     qp : qps   = F.qParams q
     tyss       = instCands ho env
     senv       = (`F.lookupSEnvWithDistance` env)
