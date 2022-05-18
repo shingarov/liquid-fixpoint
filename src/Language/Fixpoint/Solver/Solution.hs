@@ -58,7 +58,7 @@ init cfg si ks = Sol.fromList senv mempty keqs [] mempty ebs xEnv
 
 --------------------------------------------------------------------------------
 refine :: F.SInfo a -> [F.Qualifier] -> F.SEnv F.Sort -> F.WfC a -> (F.KVar, Sol.QBind)
-refine fi qs genv w = refineK (allowHOquals fi) env qs $ F.wrft w
+refine fi qs genv w = trace ("\n\n*** refine: " ++ (show qs) ++ "\n")  (refineK (allowHOquals fi) env qs $ F.wrft w)
   where
     env             = wenv <> genv
     wenv            = F.sr_sort <$> F.fromListSEnv (F.envCs (F.bs fi) (F.wenv w))
@@ -70,11 +70,11 @@ instConstants = F.fromListSEnv . filter notLit . F.toListSEnv . F.gLits
 
 
 refineK :: Bool -> F.SEnv F.Sort -> [F.Qualifier] -> (F.Symbol, F.Sort, F.KVar) -> (F.KVar, Sol.QBind)
-refineK ho env qs (v, t, k) = F.notracepp _msg (k, eqs')
+refineK ho env qs (v, t, k) = F.tracepp msg (k, eqs')
    where
     eqs                     = instK ho env v t qs
     eqs'                    = Sol.qbFilter (okInst env v t) eqs
-    _msg                    = printf "\n\nrefineK: k = %s, eqs = %s" (F.showpp k) (F.showpp eqs)
+    msg                    = printf "\n\nrefineK:\n k = %s\n eqs = %s\n eqs' = %s\n" (F.showpp k) (F.showpp eqs) (F.showpp eqs')
 
 --------------------------------------------------------------------------------
 instK :: Bool
