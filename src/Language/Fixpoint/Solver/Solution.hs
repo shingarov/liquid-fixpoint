@@ -96,10 +96,10 @@ instKQ :: Bool
        -> [Sol.EQual]
 instKQ ho env v t q = do 
   (su0, qsu0, v0) <- candidates senv [(t, [v])] qp
-  xs              <- match senv tyss [v0] (applyQP su0 qsu0 <$> qps) 
-  return           $ Sol.eQual q (F.tracepp msg (reverse xs))
+  xs              <- trace ("matched = " ++ show (match senv tyss [v0] (applyQP su0 qsu0 <$> qps))) (match senv tyss [v0] (trace ("\nqps = " ++ show qps ++ "\napplied = " ++ show (applyQP su0 qsu0 <$> qps))  (applyQP su0 qsu0 <$> qps)))
+  return           $ Sol.eQual q (F.tracepp (msg ++ "\n;;; xs = " ++ show xs ++ "\n ;;; candidates(su0,v0) = " ++ show (su0, v0) ++ "\n") (reverse xs))
   where
-    msg        = "instKQ:\nqName=" ++ F.showpp (F.qName q) ++ "\nqParams=" ++ F.showpp (F.qParams q) ++ "\ntyss=" ++ F.showpp tyss ++ "\n"
+    msg        = "instKQ:\nqName=" ++ F.showpp (F.qName q) ++ "\nqParams=" ++ F.showpp (F.qParams q) ++ "\ntyss=" ++ F.showpp tyss ++ "\nv=" ++ F.showpp v ++ "\nt=" ++ F.showpp t ++ "\n"
     qp : qps   = F.qParams q
     tyss       = instCands ho env
     senv       = (`F.lookupSEnvWithDistance` env)
