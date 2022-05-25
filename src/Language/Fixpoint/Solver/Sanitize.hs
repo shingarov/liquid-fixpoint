@@ -37,7 +37,7 @@ import           Text.PrettyPrint.HughesPJ
 type SanitizeM a = Either E.Error a
 
 --------------------------------------------------------------------------------
-sanitize :: Config -> F.SInfo a -> SanitizeM (F.SInfo a)
+sanitize :: (Fixpoint a) => Config -> F.SInfo a -> SanitizeM (F.SInfo a)
 --------------------------------------------------------------------------------
 sanitize cfg =    -- banIllScopedKvars
         --      Misc.fM dropAdtMeasures
@@ -228,7 +228,7 @@ kvarDefUses si = (Misc.group ins, Misc.group outs)
 --------------------------------------------------------------------------------
 -- | `dropDeadSubsts` removes dead `K[x := e]` where `x` NOT in the domain of K.
 --------------------------------------------------------------------------------
-dropDeadSubsts :: F.SInfo a -> F.SInfo a
+dropDeadSubsts :: (Fixpoint a) => F.SInfo a -> F.SInfo a
 dropDeadSubsts si = mapKVarSubsts (F.filterSubst . f) si
   where
     kvsM          = M.mapWithKey (\k _ -> kvDom k) (F.ws si)

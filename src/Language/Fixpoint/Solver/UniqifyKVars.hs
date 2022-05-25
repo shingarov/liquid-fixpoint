@@ -33,24 +33,25 @@ wf:
 
 module Language.Fixpoint.Solver.UniqifyKVars (wfcUniqify) where
 
+import           Language.Fixpoint.Types.PrettyPrint
 import           Language.Fixpoint.Types
 import           Language.Fixpoint.Types.Visitor (mapKVarSubsts)
 import qualified Data.HashMap.Strict as M
 import           Data.Foldable       (foldl')
 
 --------------------------------------------------------------------------------
-wfcUniqify    :: SInfo a -> SInfo a
+wfcUniqify    :: (Fixpoint a) => SInfo a -> SInfo a
 wfcUniqify fi = updateWfcs $ remakeSubsts fi
 
 
 
 -- mapKVarSubsts (\k su -> restrict table k su xs)
 --------------------------------------------------------------------------------
-remakeSubsts :: SInfo a -> SInfo a
+remakeSubsts :: (Fixpoint a) => SInfo a -> SInfo a
 --------------------------------------------------------------------------------
 remakeSubsts fi = mapKVarSubsts (remakeSubst fi) fi
 
-remakeSubst :: SInfo a -> KVar -> Subst -> Subst
+remakeSubst :: (Fixpoint a) => SInfo a -> KVar -> Subst -> Subst
 remakeSubst fi k su = foldl' (updateSubst k) su (kvarDomain fi k)
 
 updateSubst :: KVar -> Subst -> Symbol -> Subst
@@ -66,11 +67,11 @@ updateSubst k (Su su) sym
 -- /  | otherwise         = Su $                M.insert ksym (eVar sym)   su
 
 --------------------------------------------------------------------------------
-updateWfcs :: SInfo a -> SInfo a
+updateWfcs :: (Fixpoint a) => SInfo a -> SInfo a
 --------------------------------------------------------------------------------
 updateWfcs fi = M.foldl' updateWfc fi (ws fi)
 
-updateWfc :: SInfo a -> WfC a -> SInfo a
+updateWfc :: (Fixpoint a) => SInfo a -> WfC a -> SInfo a
 updateWfc fi w    = fi'' { ws = M.insert k w' (ws fi) }
   where
     w'            = updateWfCExpr (subst su) w''

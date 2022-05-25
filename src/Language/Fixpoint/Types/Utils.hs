@@ -20,13 +20,15 @@ import           Language.Fixpoint.Types.Names
 import           Language.Fixpoint.Types.Refinements
 import           Language.Fixpoint.Types.Environments
 import           Language.Fixpoint.Types.Constraints
+import Debug.Trace
+import           Language.Fixpoint.Types.PrettyPrint
 
 --------------------------------------------------------------------------------
 -- | Compute the domain of a kvar
 --------------------------------------------------------------------------------
-kvarDomain :: SInfo a -> KVar -> [Symbol]
+kvarDomain :: (Fixpoint a) => SInfo a -> KVar -> [Symbol]
 --------------------------------------------------------------------------------
-kvarDomain si k = domain (bs si) (getWfC si k)
+kvarDomain si k = trace ("\n\n*** kvarDomain: si= " ++ show (ws si) ++ "\n\n")     (domain (bs si) (getWfC si k))
 
 domain :: BindEnv -> WfC a -> [Symbol]
 domain be wfc = fst3 (wrft wfc) : map fst (envCs be $ wenv wfc)
