@@ -57,6 +57,7 @@ import           Language.Fixpoint.Minimize (minQuery, minQuals, minKvars)
 import           Language.Fixpoint.Solver.Instantiate (instantiate)
 import           Control.DeepSeq
 import qualified Data.ByteString as B
+import Debug.Trace
 
 ---------------------------------------------------------------------------
 -- | Solve an .fq file ----------------------------------------------------
@@ -207,7 +208,7 @@ simplifyFInfo !cfg !fi0 = do
   let si0   = {- SCC "convertFormat" #-} convertFormat fi1
   -- writeLoud $ "fq file after format convert: \n" ++ render (toFixpoint cfg si0)
   -- rnf si0 `seq` donePhase Loud "Format Conversion"
-  let si1   = either die id $ ({- SCC "sanitize" #-} sanitize cfg $!! si0)
+  let si1   = either die id $ ({- SCC "sanitize" #-}  trace   ("\n\n\n++++++++++++++ fi0=" ++ show fi0)    (sanitize cfg $!! si0))
   -- writeLoud $ "fq file after sanitize: \n" ++ render (toFixpoint cfg si1)
   -- rnf si1 `seq` donePhase Loud "Validated Constraints"
   graphStatistics cfg si1
@@ -225,7 +226,7 @@ simplifyFInfo !cfg !fi0 = do
     then instantiate cfg si6 $!! Nothing
     else return si6
 
-reduceFInfo :: Fixpoint a => Config -> FInfo a -> IO (FInfo a)
+reduceFInfo :: (Fixpoint a, Show a) => Config -> FInfo a -> IO (FInfo a)
 reduceFInfo cfg fi = do
   let simplifiedFi = {- SCC "simplifyFInfo" #-} simplifyBindings cfg fi
       reducedFi = {- SCC "reduceEnvironments" #-} reduceEnvironments simplifiedFi
@@ -234,7 +235,7 @@ reduceFInfo cfg fi = do
   if noEnvironmentReduction cfg then
     return fi
   else
-    return reducedFi
+    trace ("\n\n\nsimplifiedFi=" ++ show simplifiedFi)  (return reducedFi)
 
 solveNative' !cfg !fi0 = do
   si6 <- simplifyFInfo cfg fi0

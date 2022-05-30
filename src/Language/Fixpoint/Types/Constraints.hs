@@ -121,6 +121,7 @@ import qualified Data.HashMap.Strict       as M
 import qualified Data.HashSet              as S
 import qualified Data.ByteString           as B
 import qualified Data.Binary as B
+import Debug.Trace
 
 --------------------------------------------------------------------------------
 -- | Constraints ---------------------------------------------------------------
@@ -471,10 +472,11 @@ shiftVV r@(Reft (v, ras)) v'
    | v == v'   = r
    | otherwise = Reft (v', subst1 ras (v, EVar v'))
 
-addIds :: [SubC a] -> [(Integer, SubC a)]
-addIds = zipWith (\i c -> (i, shiftId i $ c {_sid = Just i})) [1..]
+addIds :: (Fixpoint a, Show a) =>  [SubC a] -> [(Integer, SubC a)]
+addIds x = trace ("\n\n\n++++++++++++++++ addIds: in=" ++ show x ++ "\nresult=" ++ show (fff x))  (fff x)
   where
     -- Adding shiftId to have distinct VV for SMT conversion
+    fff = zipWith (\i c -> (i, shiftId i $ c {_sid = Just i})) [1..]
     shiftId i c = c { slhs = shiftSR i $ slhs c }
                     { srhs = shiftSR i $ srhs c }
     shiftSR i sr = sr { sr_reft = shiftR i $ sr_reft sr }
@@ -646,7 +648,7 @@ instance Monoid Kuts where
 ------------------------------------------------------------------------
 -- | Constructing Queries
 ------------------------------------------------------------------------
-fi :: [SubC a]
+fi :: (Fixpoint a, Show a) => [SubC a]
    -> [WfC a]
    -> BindEnv
    -> SEnv Sort

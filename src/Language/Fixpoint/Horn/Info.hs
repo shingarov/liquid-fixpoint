@@ -16,7 +16,7 @@ import qualified Language.Fixpoint.Types        as F
 import qualified Language.Fixpoint.Types.Config as F
 import qualified Language.Fixpoint.Horn.Types   as H
 
-hornFInfo :: F.Config -> H.Query a -> F.FInfo a
+hornFInfo :: (F.Fixpoint a, Show a) => F.Config -> H.Query a -> F.FInfo a
 hornFInfo cfg q = mempty
   { F.cm        = cs
   , F.bs        = be2
@@ -42,7 +42,7 @@ axEnv cfg q cs = mempty
   }
 
 ----------------------------------------------------------------------------------
-hornSubCs :: F.BindEnv -> KVEnv a -> H.Cstr a
+hornSubCs :: (F.Fixpoint a, Show a) =>  F.BindEnv -> KVEnv a -> H.Cstr a
           -> (F.BindEnv, [F.BindId], M.HashMap F.SubcId (F.SubC a))
 ----------------------------------------------------------------------------------
 hornSubCs be kve c = (be', ebs, M.fromList (F.addIds cs))

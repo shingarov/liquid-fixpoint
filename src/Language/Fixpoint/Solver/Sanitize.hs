@@ -33,16 +33,17 @@ import qualified Data.Text                                         as T
 import           Data.Maybe          (isNothing, mapMaybe, fromMaybe)
 import           Control.Monad       ((>=>))
 import           Text.PrettyPrint.HughesPJ
+import Debug.Trace
 
 type SanitizeM a = Either E.Error a
 
 --------------------------------------------------------------------------------
-sanitize :: Config -> F.SInfo a -> SanitizeM (F.SInfo a)
+sanitize :: (Fixpoint a, Show a) => Config -> F.SInfo a -> SanitizeM (F.SInfo a)
 --------------------------------------------------------------------------------
-sanitize cfg =    -- banIllScopedKvars
+sanitize cfg si =    -- banIllScopedKvars
         --      Misc.fM dropAdtMeasures
         --      >=>
-                     banIrregularData
+         trace  ("\n\n\n============ sanitize si=" ++ show si)            ((banIrregularData
          >=> Misc.fM dropFuncSortedShadowedBinders
          >=> Misc.fM sanitizeWfC
          >=> Misc.fM replaceDeadKvars
@@ -52,7 +53,7 @@ sanitize cfg =    -- banIllScopedKvars
          >=>         banConstraintFreeVars
          >=> Misc.fM addLiterals
          >=> Misc.fM (eliminateEta cfg)
-         >=> Misc.fM cancelCoercion
+         >=> Misc.fM cancelCoercion) si)
 
 
 --------------------------------------------------------------------------------
@@ -229,8 +230,8 @@ kvarDefUses si = (Misc.group ins, Misc.group outs)
 --------------------------------------------------------------------------------
 -- | `dropDeadSubsts` removes dead `K[x := e]` where `x` NOT in the domain of K.
 --------------------------------------------------------------------------------
-dropDeadSubsts :: F.SInfo a -> F.SInfo a
-dropDeadSubsts si = mapKVarSubsts (F.filterSubst . f) si
+dropDeadSubsts :: (Fixpoint a, Show a) => F.SInfo a -> F.SInfo a
+dropDeadSubsts si = trace ("\n\n\n###########dropDeadSubsts:\nbefore=" ++ (show si))  (mapKVarSubsts (F.filterSubst . f) si)
   where
     kvsM          = M.mapWithKey (\k _ -> kvDom k) (F.ws si)
     kvDom         = S.fromList . F.kvarDomain si

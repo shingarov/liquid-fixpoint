@@ -55,7 +55,7 @@ saveHornQuery cfg q = do
   writeFile hq $ render (F.pprint q)
 
 ----------------------------------------------------------------------------------
-eliminate :: (F.PPrint a) => F.Config -> H.Query a -> IO (H.Query a)
+eliminate :: (F.PPrint a, F.Fixpoint a, Show a) => F.Config -> H.Query a -> IO (H.Query a)
 ----------------------------------------------------------------------------------
 eliminate cfg q
   | F.eliminate cfg == F.Existentials = do
