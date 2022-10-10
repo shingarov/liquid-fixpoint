@@ -39,6 +39,8 @@ module Language.Fixpoint.SortCheck  (
   , unifyTo1
   , unifys
 
+  , testUnifySorts
+
   -- * Apply Substitution
   , apply
   , defuncEApp
@@ -1174,6 +1176,18 @@ eqFast = go
 unifys :: HasCallStack => Env -> Maybe Expr -> [Sort] -> [Sort] -> CheckM TVSubst
 --------------------------------------------------------------------------------
 unifys f e = unifyMany f e emptySubst
+
+
+
+testUnifySorts :: () -> Maybe TVSubst
+testUnifySorts _ = res
+  where
+    f = (`lookupSEnvWithDistance` emptySEnv)
+    -- res = unify f Nothing FInt (FVar 5)  --> [(5,Fint)]
+    -- res = unify f Nothing FInt (FObj "asdf")  --> Nothing
+    res = unify f Nothing FInt FInt -- --> []
+
+
 
 unifyMany :: HasCallStack => Env -> Maybe Expr -> TVSubst -> [Sort] -> [Sort] -> CheckM TVSubst
 unifyMany f e θ ts ts'
