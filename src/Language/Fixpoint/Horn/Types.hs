@@ -268,7 +268,7 @@ instance Show (Var a) where
 
 instance Show Pred where
   show (Reft p)   = parens $ F.showpp p
-  show (Var x xs) = parens $ unwords (F.symbolString <$> x:xs)
+  show (Var x xs) = parens $ "$" ++ unwords (F.symbolString <$> x:xs)
   show (PAnd ps)  = parens $ unwords $ "and": map show ps
 
 instance Show (Cstr a) where
