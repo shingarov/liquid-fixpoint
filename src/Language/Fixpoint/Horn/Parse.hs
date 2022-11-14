@@ -64,7 +64,7 @@ hCstrP :: Parser (H.Cstr ())
 -------------------------------------------------------------------------------
 hCstrP = parens body
   where
-    body =  H.CAnd  <$> (reserved "and"    *> some hCstrP)
+    body =  H.CAnd  <$> (reserved "and"    *> many hCstrP)
         <|> H.All   <$> (reserved "forall" *> hBindP)       <*> hCstrP
         <|> H.Any   <$> (reserved "exists" *> hBindP)       <*> hCstrP
         <|> H.Head  <$> hPredP                              <*> pure ()
