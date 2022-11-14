@@ -253,7 +253,7 @@ instance F.PPrint (Var a) where
 
 instance F.PPrint Pred where
   pprintPrec k t (Reft p)   = P.parens $ F.pprintPrec k t p
-  pprintPrec _ _ (Var x xs) = P.parens $ P.hsep (P.ptext . F.symbolString <$> x:xs)
+  pprintPrec _ _ (Var x xs) = P.parens $ P.ptext "$" <> P.hsep (P.ptext . F.symbolString <$> x:xs)
   pprintPrec k t (PAnd ps)  = P.parens $ P.vcat $ P.ptext "and" : map (F.pprintPrec (k+2) t) ps
 
 instance F.PPrint (Cstr a) where
