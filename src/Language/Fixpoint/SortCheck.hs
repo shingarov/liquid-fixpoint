@@ -87,7 +87,7 @@ import           GHC.Stack
 import qualified Language.Fixpoint.Types as F
 import           System.IO.Unsafe (unsafePerformIO)
 
---import Debug.Trace as Debug
+import Debug.Trace
 
 -- If set to 'True', enable precise logging via CallStacks.
 debugLogs :: Bool
@@ -163,7 +163,11 @@ instance Elaborate Equation where
       env' = insertsSymEnv env (eqArgs eq) 
 
 instance Elaborate Expr where
-  elaborate msg env = elabNumeric . elabApply env . elabExpr msg env
+  elaborate msg env x = trace ("--(elabNumer)--> " ++ show result)  result
+    where
+      result = trace ("--(elabApply)--> " ++ show applied)   (elabNumeric applied)
+      applied = trace ("--(elabExpr)---> " ++ show expressed)   (elabApply env expressed)
+      expressed = trace ("\n\n\n***** elaborate: " ++ show x)   (elabExpr msg env x)
 
 
 skipElabExpr :: Located String -> SymEnv -> Expr -> Expr 
@@ -476,7 +480,7 @@ elab f@(_, g) e@(EBin o e1 e2) = do
   return (EBin o (ECst e1' s1) (ECst e2' s2), s)
 
 elab f (EApp e1@(EApp _ _) e2) = do
-  (e1', _, e2', s2, s) <- notracepp "ELAB-EAPP" <$> elabEApp f e1 e2
+  (e1', _, e2', s2, s) <- trace ("\n\n\nELAB-EAPP:\ne1 = " ++ show e1 ++ "\ne2 = " ++ show e2) <$> elabEApp f e1 e2
   let e = eAppC s e1' (ECst e2' s2)
   let θ = unifyExpr (snd f) e
   return (applyExpr θ e, maybe s (`apply` s) θ)
@@ -485,7 +489,9 @@ elab f (EApp e1 e2) = do
   (e1', s1, e2', s2, s) <- elabEApp f e1 e2
   let e = eAppC s (ECst e1' s1) (ECst e2' s2)
   let θ = unifyExpr (snd f) e
-  return (applyExpr θ e, maybe s (`apply` s) θ)
+  let a = applyExpr θ e
+  let b = maybe s (`apply` s) θ
+  return $  trace ("\n\n\n######## elab EAPP:\ne1 = " ++ show e1 ++ "\ne2 = " ++ show e2 ++ "\ne1' = " ++ show e1' ++ "\ns1 = " ++ show s1 ++ "\ne2' = " ++ show e2' ++ "\ns2 = " ++ show s2 ++ "\ns = "   ++ show s ++ "\ne = " ++ show e ++ "\na = " ++ show a ++ "\nb = " ++ show b)       (a, b)
 
 elab _ e@(ESym _) =
   return (e, strSort)
