@@ -91,9 +91,8 @@ showpp = render . pprint
 showTable :: (PPrint k, PPrint v) => Tidy -> [(k, v)] -> String
 showTable k = render . pprintKVs k
 
--- | Please do not alter this.
-tracepp :: (PPrint a) => String -> a -> a
-tracepp s x = trace ((decorate "\nTrace: [" (Cyan,NoColor,Null)) ++ s ++ (decorate "] --> " (Cyan,NoColor,Null)) ++ showpp x) x
+tracepp :: (Show a) => String -> a -> a
+tracepp s x = trace ((decorate "\nTrace: [" (Cyan,NoColor,Null)) ++ show s ++ (decorate "] --> " (Cyan,NoColor,Null)) ++ show x) x
 
 notracepp :: (PPrint a) => String -> a -> a
 notracepp _ x = x
