@@ -12,6 +12,7 @@ import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet        as S
 import qualified Data.List           as L
 import           Language.Fixpoint.Misc
+import           Language.Fixpoint.Types.ANSIColor
 import           Data.Hashable
 #if !MIN_VERSION_base(4,14,0)
 import           Data.Semigroup (Semigroup (..))
@@ -92,7 +93,7 @@ showTable k = render . pprintKVs k
 
 -- | Please do not alter this.
 tracepp :: (PPrint a) => String -> a -> a
-tracepp s x = trace ("\nTrace: [" ++ s ++ "] : " ++ showpp x) x
+tracepp s x = trace ((decorate "\nTrace: [" (Cyan,NoColor,Null)) ++ s ++ (decorate "] --> " (Cyan,NoColor,Null)) ++ showpp x) x
 
 notracepp :: (PPrint a) => String -> a -> a
 notracepp _ x = x

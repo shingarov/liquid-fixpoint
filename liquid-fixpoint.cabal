@@ -84,6 +84,7 @@ library
                     Language.Fixpoint.Solver.Extensionality
                     Language.Fixpoint.SortCheck
                     Language.Fixpoint.Types
+                    Language.Fixpoint.Types.ANSIColor
                     Language.Fixpoint.Types.Config
                     Language.Fixpoint.Types.Constraints
                     Language.Fixpoint.Types.Environments
