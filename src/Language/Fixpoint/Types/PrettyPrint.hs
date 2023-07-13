@@ -5,7 +5,7 @@
 
 module Language.Fixpoint.Types.PrettyPrint where
 
-import           Debug.Trace               (trace)
+import           Debug.Trace               (trace, traceStack)
 import           Text.PrettyPrint.HughesPJ.Compat
 import qualified Text.PrettyPrint.Boxes as B
 import qualified Data.HashMap.Strict as M
@@ -91,8 +91,9 @@ showpp = render . pprint
 showTable :: (PPrint k, PPrint v) => Tidy -> [(k, v)] -> String
 showTable k = render . pprintKVs k
 
-tracepp :: (Show a) => String -> a -> a
-tracepp s x = trace ((decorate "\nTrace: [" (Cyan,NoColor,Null)) ++ show s ++ (decorate "] --> " (Cyan,NoColor,Null)) ++ show x) x
+tracepp, traceppStack :: (Show a) => String -> a -> a
+tracepp s x = trace ((decorate "\nTrace: [" (Cyan,NoColor,Null)) ++ s ++ (decorate "] --> " (Cyan,NoColor,Null)) ++ show x) x
+traceppStack s x = traceStack ((decorate "\nTrace: [" (Cyan,NoColor,Null)) ++ s ++ (decorate "] --> " (Cyan,NoColor,Null)) ++ show x) x
 
 notracepp :: (PPrint a) => String -> a -> a
 notracepp _ x = x
