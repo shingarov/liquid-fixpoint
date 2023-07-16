@@ -279,7 +279,7 @@ dropBadParams kBads k kEnv = L.foldl' (flip F.deleteSEnv) kEnv xs
   where
     xs                     = M.lookupDefault mempty k kBads
 
-badParams :: F.SInfo a -> F.SimpC a -> M.HashMap F.KVar [F.Symbol]
+badParams :: F.SInfo a -> F.SimpC a -> KvBads
 badParams si c = Misc.group bads
   where
     bads       = [ (k, x) | (v, k, F.Su su) <- subcKSubs xsrs c
