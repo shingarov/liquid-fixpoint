@@ -31,6 +31,7 @@ import           Language.Fixpoint.Types.PrettyPrint ()
 import           Language.Fixpoint.Types.Visitor      as V
 import qualified Language.Fixpoint.SortCheck          as So
 import qualified Language.Fixpoint.Misc               as Misc
+import           Language.Fixpoint.Types.ANSIColor
 import           Language.Fixpoint.Types.Config
 import qualified Language.Fixpoint.Types              as F
 import           Language.Fixpoint.Types                 ((&.&))
@@ -485,8 +486,19 @@ cubePredExc g s ksu c bs' = (cubeP, extendKInfo kI (Sol.cuTag c))
      2. are binders corresponding to sorts (e.g. `a : num`, currently used
         to hack typeclasses current.)
  -}
-substElim :: F.SymEnv -> F.SEnv F.Sort -> CombinedEnv -> F.KVar -> F.Subst -> ([(F.Symbol, F.Sort)], F.Pred)
-substElim syEnv sEnv g _ (F.Su m) = (xts, p)
+substElim, substElimX :: F.SymEnv -> F.SEnv F.Sort -> CombinedEnv -> F.KVar -> F.Subst -> ([(F.Symbol, F.Sort)], F.Pred)
+
+substElim syEnv sEnv g kvar su = F.traceppStack ("\nsubstElim:"
+                                                 ++ (decorate  "\nkvar = "   (Yellow,NoColor,Null)) ++ show   kvar
+                                                 ++ (decorate  "\nsu = "     (Yellow,NoColor,Null)) ++ show   su
+                                                 ++ (decorate  "\nsyEnv = "  (Yellow,NoColor,Null)) ++ show   syEnv
+                                                 ++ (decorate  "\nsEnv = "   (Yellow,NoColor,Null)) ++ show   sEnv
+                                                 ++ (decorate  "\ng = "      (Yellow,NoColor,Null)) ++ show   g
+                                                 ++ "\n")   res
+  where
+    res = substElimX syEnv sEnv g kvar su
+
+substElimX syEnv sEnv g _ (F.Su m) = (xts, p)
   where
     p      = F.pAnd [ mkSubst sp syEnv x (substSort sEnv frees x t) e t | (x, e, t) <- xets  ]
     xts    = [ (x, t)    | (x, _, t) <- xets, not (S.member x frees) ]
