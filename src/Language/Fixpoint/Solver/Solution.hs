@@ -291,7 +291,7 @@ data CombinedEnv = CEnv
     -- referred as @EVar (bindSymbol <bindId>)@ instead of serializing them
     -- again.
   , ceBindingsInSmt :: !F.IBindEnv
-  }
+  } deriving Show
 
 instance F.Loc CombinedEnv where 
   srcSpan = ceSpan
