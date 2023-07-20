@@ -37,7 +37,7 @@ import           Text.PrettyPrint.HughesPJ
 type SanitizeM a = Either E.Error a
 
 --------------------------------------------------------------------------------
-sanitize :: Config -> F.SInfo a -> SanitizeM (F.SInfo a)
+sanitize :: Fixpoint a => Config -> F.SInfo a -> SanitizeM (F.SInfo a)
 --------------------------------------------------------------------------------
 sanitize cfg =    -- banIllScopedKvars
         --      Misc.fM dropAdtMeasures
@@ -242,7 +242,7 @@ dropDeadSubsts si = mapKVarSubsts (F.filterSubst . f) si
 --   `x` which appear in substitutions of the form `K[x := y]` where `y`
 --   is not in the env.
 --------------------------------------------------------------------------------
-restrictKVarDomain :: F.SInfo a -> F.SInfo a
+restrictKVarDomain :: Fixpoint a => F.SInfo a -> F.SInfo a
 restrictKVarDomain si = si { F.ws = M.mapWithKey (restrictWf kvm) (F.ws si) }
   where
     kvm               = safeKvarEnv si

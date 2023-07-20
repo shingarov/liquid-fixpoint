@@ -68,7 +68,7 @@ printStats fi w s = putStrLn "\n" >> ppTs [ ptable fi, ptable s, ptable w ]
     ppTs          = putStrLn . showpp . mconcat
 
 --------------------------------------------------------------------------------
-solverInfo :: Config -> F.SInfo a -> SolverInfo a b
+solverInfo :: Fixpoint a => Config -> F.SInfo a -> SolverInfo a b
 --------------------------------------------------------------------------------
 solverInfo cfg fI
   | useElim cfg = E.solverInfo cfg fI
@@ -81,7 +81,7 @@ siKvars = S.fromList . M.keys . F.ws
 
 
 {-# SCC doPLE #-}
-doPLE :: (F.Loc a) =>  Config -> F.SInfo a -> [F.SubcId] -> SolveM ()
+doPLE :: (F.Loc a) => Fixpoint a => Config -> F.SInfo a -> [F.SubcId] -> SolveM ()
 doPLE cfg fi0 subcIds = do
   fi <- liftIO $ instantiate cfg fi0 (Just subcIds)
   modify $ update' fi

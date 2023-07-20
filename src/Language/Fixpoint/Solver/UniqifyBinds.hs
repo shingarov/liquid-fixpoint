@@ -21,7 +21,7 @@ import           Control.DeepSeq     (NFData, ($!!))
 -- import Debug.Trace (trace)
 
 --------------------------------------------------------------------------------
-renameAll    :: SInfo a -> SInfo a
+renameAll    :: Fixpoint a => SInfo a -> SInfo a
 --------------------------------------------------------------------------------
 renameAll fi2 = fi6
   where
