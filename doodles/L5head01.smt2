@@ -23,5 +23,5 @@
       (forall ((VV int) (VV == z)) (($k7 VV z)))
       (forall ((l (list int)) (len l == 1))
        (and
-         (forall ((v (list int)) (and (len v == 1) (v == l))) (((len v > 0))))
+         (forall ((w (list int)) (and (len w == 1) (w == l))) (((len w > 0))))
          (forall ((VV6 int) (and ($k7 VV6 z) (true))) (($k9 VV6 l z))))))))))
