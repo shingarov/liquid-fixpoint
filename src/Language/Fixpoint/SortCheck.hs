@@ -209,8 +209,11 @@ instance (Loc a) => Elaborate (SimpC a) where
 --------------------------------------------------------------------------------
 -- | 'elabExpr' adds "casts" to decorate polymorphic instantiation sites.
 --------------------------------------------------------------------------------
-elabExpr :: Located String -> SymEnv -> Expr -> Expr
-elabExpr msg env e = case elabExprE msg env e of 
+elabExpr, elabExprXX :: Located String -> SymEnv -> Expr -> Expr
+
+elabExpr msg env e = traceppStack ("\nelabExpr: " ++ show e)   (elabExprXX msg env e)
+
+elabExprXX msg env e = case elabExprE msg env e of 
   Left ex  -> die ex 
   Right e' -> F.notracepp ("elabExp " ++ showpp e) e' 
 
