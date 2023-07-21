@@ -728,8 +728,11 @@ unApplyAt (ECst (EVar f) t@(FFunc {}))
 unApplyAt _        = Nothing
 
 
-splitArgs :: Expr -> (Expr, [(Expr, Sort)])
-splitArgs = go []
+splitArgs, splitArgsXX :: Expr -> (Expr, [(Expr, Sort)])
+
+splitArgs e = traceppStack ("splitArgs: e = " ++ show e)  $ splitArgsXX e
+
+splitArgsXX = go []
   where
     go acc (ECst (EApp e1 e) s) = go ((e, s) : acc) e1
     go _   e@EApp{}             = errorstar $ "UNEXPECTED: splitArgs: EApp without output type: " ++ showpp e
