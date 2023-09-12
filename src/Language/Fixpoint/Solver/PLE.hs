@@ -63,7 +63,7 @@ traceE (e,e')
 -- | Strengthen Constraint Environments via PLE 
 --------------------------------------------------------------------------------
 {-# SCC instantiate #-}
-instantiate :: (Loc a) => Config -> SInfo a -> Maybe [SubcId] -> IO (SInfo a)
+instantiate :: (Loc a, Fixpoint a) => Config -> SInfo a -> Maybe [SubcId] -> IO (SInfo a)
 instantiate cfg fi' subcIds = do
     let cs = M.filterWithKey
                (\i c -> isPleCstr aEnv i c && maybe True (i `L.elem`) subcIds)
