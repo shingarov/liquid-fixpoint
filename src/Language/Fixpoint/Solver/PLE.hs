@@ -288,7 +288,7 @@ data ICtx    = ICtx
   , icSimpl    :: !ConstMap                 -- ^ Map of expressions to constants
   , icSubcId   :: Maybe SubcId              -- ^ Current subconstraint ID
   , icFuel     :: !FuelCount                -- ^ Current fuel-count
-  } 
+  } deriving Show
 
 ---------------------------------------------------------------------------------------------- 
 -- | @InstRes@ is the final result of PLE; a map from @BindId@ to the equations "known" at that BindId
