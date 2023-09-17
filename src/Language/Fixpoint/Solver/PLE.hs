@@ -411,7 +411,7 @@ data EvalEnv = EvalEnv
   { evEnv      :: !SymEnv
   , evAccum    :: EvAccum
   , evFuel     :: FuelCount
-  }
+  } deriving Show
 
 data FuelCount = FC 
   { fcMap :: M.HashMap Symbol Int
