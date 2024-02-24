@@ -105,6 +105,9 @@ data Context = Ctx
   , ctxTVar    :: TVar Builder
   }
 
+instance Show Context where
+  show (Ctx _ _ _ _ _ _ _ _) = "CTX"
+
 --------------------------------------------------------------------------------
 -- | AST Conversion: Types that can be serialized ------------------------------
 --------------------------------------------------------------------------------

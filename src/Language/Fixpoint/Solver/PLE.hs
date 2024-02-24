@@ -274,7 +274,7 @@ data InstEnv a = InstEnv
   , ieCstrs :: !(CMap (SimpC a))
   , ieKnowl :: !Knowledge
   , ieEvEnv :: !EvalEnv
-  } 
+  } deriving Show
 
 ---------------------------------------------------------------------------------------------- 
 -- | @ICtx@ is the local information -- at each trie node -- obtained by incremental PLE
@@ -747,6 +747,9 @@ data Knowledge = KN
   , knAutoRWs           :: M.HashMap SubcId [AutoRewrite]
   , knRWTerminationOpts :: RWTerminationOpts
   }
+
+instance Show Knowledge where
+  show (KN _ ams _ _ lams  _ _ _ _ _  _) = "(KN\n knAms=" ++ show ams ++ "\nknLams = " ++ show lams ++ "\n)"
 
 isValid :: Knowledge -> Expr -> IO Bool
 isValid γ e = do 
