@@ -69,11 +69,6 @@ data Pred
   deriving (Data, Typeable, Generic, Eq)
 
 
-instance Semigroup Pred where
-  p1 <> p2 = PAnd [p1, p2]
-
-instance Monoid Pred where 
-  mempty = Reft mempty
 
 instance F.Subable Pred where
   syms (Reft e)   = F.syms e
