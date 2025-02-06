@@ -837,7 +837,7 @@ subcToSimpc m s = SimpC
   , _cinfo      = sinfo s
   }
 
-outVV :: (BindM, FInfo a) -> Integer -> SubC a -> (BindM, FInfo a)
+outVV :: (Fixpoint a) => (BindM, FInfo a) -> Integer -> SubC a -> (BindM, FInfo a)
 outVV (m, fi) i c = (m', fi')
   where
     fi'           = fi { bs = be', cm = cm' }
