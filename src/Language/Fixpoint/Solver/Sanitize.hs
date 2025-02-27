@@ -263,13 +263,13 @@ restrictWf kve k w = w { F.wenv = F.filterIBindEnv f (F.wenv w) }
 type KvDom     = M.HashMap F.KVar (F.SEnv F.BindId)
 type KvBads    = M.HashMap F.KVar [F.Symbol]
 
-safeKvarEnv :: F.SInfo a -> KvDom
+safeKvarEnv :: Fixpoint a => F.SInfo a -> KvDom
 safeKvarEnv si = L.foldl' (dropKvarEnv si) env0 cs
   where
     cs         = M.elems  (F.cm si)
     env0       = initKvarEnv si
 
-dropKvarEnv :: F.SInfo a -> KvDom -> F.SimpC a -> KvDom
+dropKvarEnv :: Fixpoint a => F.SInfo a -> KvDom -> F.SimpC a -> KvDom
 dropKvarEnv si kve c = M.mapWithKey (dropBadParams kBads) kve
   where
     kBads            = badParams si c
@@ -279,7 +279,7 @@ dropBadParams kBads k kEnv = L.foldl' (flip F.deleteSEnv) kEnv xs
   where
     xs                     = M.lookupDefault mempty k kBads
 
-badParams :: F.SInfo a -> F.SimpC a -> KvBads
+badParams :: Fixpoint a => F.SInfo a -> F.SimpC a -> KvBads
 badParams si c = Misc.group bads
   where
     bads       = [ (k, x) | (v, k, F.Su su) <- subcKSubs xsrs c
