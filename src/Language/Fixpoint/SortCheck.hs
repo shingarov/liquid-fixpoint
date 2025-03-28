@@ -653,7 +653,12 @@ elabAppSort f e1 e2 s1 s2 = do
   let e            = Just (EApp e1 e2)
   (sIn, sOut, su) <- checkFunSort s1
   su'             <- unify1 f e su sIn s2
-  return           $ (applyExpr (Just su') e1, applyExpr (Just su') e2, apply su' s1, apply su' s2, apply su' sOut)
+  let e1'          = applyExpr (Just su') e1
+  let e2'          = applyExpr (Just su') e2
+  let s1'          = apply su' s1
+  let s2'          = apply su' s2
+  let sOut'        = apply su' sOut
+  return           $ (e1', e2', s1', s2', sOut')
 
 
 --------------------------------------------------------------------------------
