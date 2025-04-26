@@ -1,14 +1,12 @@
 -- | Progress Bar API
 module Language.Fixpoint.Utils.Progress (
       withProgress
-    , progressInit
     , progressTick
     , progressClose
     ) where
 
 import           Control.Monad                    (when)
 import           System.IO.Unsafe                 (unsafePerformIO)
-import           System.Console.CmdArgs.Verbosity (isNormal, getVerbosity, Verbosity(..))
 import           Data.IORef
 import           System.Console.AsciiProgress
 -- import           Language.Fixpoint.Misc (traceShow)
@@ -18,33 +16,9 @@ pbRef :: IORef (Maybe ProgressBar)
 pbRef = unsafePerformIO (newIORef Nothing)
 
 withProgress :: Int -> IO a -> IO a
-withProgress n act = do
-  showBar <- ((/=) Quiet) <$> getVerbosity
-  case showBar of
-    False -> act
-    True  -> displayConsoleRegions $ do
-      -- putStrLn $ "withProgress: " ++ show n
-      progressInit n
-      r <- act
-      progressClose
-      return r
+withProgress _ act = do
+  act
   
-progressInit :: Int -> IO ()
-progressInit n = do
-  normal <- isNormal 
-  when normal $ do
-    pr <- mkPB n
-    writeIORef pbRef (Just pr)
-
-mkPB   :: Int -> IO ProgressBar
-mkPB n = newProgressBar def 
-  { pgWidth       = 80
-  , pgTotal       = {- traceShow "MAKE-PROGRESS" -} (toInteger n)
-  , pgFormat      = "Working :percent [:bar]"
-  , pgPendingChar = '.'
-  , pgOnCompletion = Nothing
-  }
-
 progressTick :: IO ()
 progressTick    = go =<< readIORef pbRef
   where
