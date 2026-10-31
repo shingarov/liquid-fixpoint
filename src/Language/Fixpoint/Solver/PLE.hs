@@ -325,7 +325,6 @@ initCtx es   = ICtx
   { icAssms  = mempty
   , icCands  = mempty
   , icEquals = S.fromList es
-  , icSolved = mempty
   , icSimpl  = mempty
   , icSubcId = Nothing
   , icANFs   = []
